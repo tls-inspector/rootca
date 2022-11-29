@@ -12,9 +12,10 @@ This is provided for the TLS Inspector iOS application, but can be used by anybo
 This repository contains three components: A container image to build the certificate bundle, a github workflow to check
 for and perform updates, and the actual certificate bundle itself.
 
-The container image includes a python script that downloads the latest certificate export from the curl website and then
-prepares a PKCS#7 archive. It also generates an Apple Property List file containing the date and shasum. This is used to
-determine if updates are required the next time the script runs.
+The container image includes a python script that downloads the latest certificate export from the
+[curl website](https://curl.se/docs/caextract.html) and then prepares a PKCS#7 archive. It also generates an Apple
+Property List file containing the date and shasum. This is used to determine if updates are required the next time the
+script runs.
 
 The Github workflow executes the container image hosted on Github Container Registry and, if any changes to the bundle
 were made, will tag and create a new release.
