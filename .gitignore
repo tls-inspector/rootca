@@ -1,0 +1,4 @@
+*.plist
+*.p7b
+!/BundleMetadata.plist
+!/moz_ca_bundle.p7b

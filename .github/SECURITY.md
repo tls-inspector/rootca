@@ -1,0 +1,1 @@
+As part of the TLS Inspector group of projects, this repository inherits the [security policy of TLS Inspector](https://github.com/tls-inspector/tls-inspector/security/policy).
