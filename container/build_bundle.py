@@ -9,8 +9,8 @@ from pathlib import Path
 
 wd = os.getcwd()
 
-mozilla_bundle_path = os.path.join(wd, "moz_ca_bundle.p7b")
-bundle_metadata_path = os.path.join(wd, "BundleMetadata.plist")
+mozilla_bundle_path = os.path.join(wd, "mozilla_ca_bundle.p7b")
+bundle_metadata_path = os.path.join(wd, "bundle_metadata.plist")
 
 latest_mozilla_sha256 = urllib.request.urlopen(
     "https://curl.se/ca/cacert.pem.sha256").read().decode("utf-8").split(' ')[0].rstrip()
@@ -67,10 +67,10 @@ def make_mozilla_bundle():
             i += 1
 
         params.append("-out")
-        params.append("moz_ca_bundle.p7b")
+        params.append("mozilla_ca_bundle.p7b")
 
         subprocess.run(params, check=True)
-        subprocess.run(["mv", "moz_ca_bundle.p7b",
+        subprocess.run(["mv", "mozilla_ca_bundle.p7b",
                         mozilla_bundle_path], check=True)
 
     # In: Tue Oct 11 03:12:05 2022 GMT
