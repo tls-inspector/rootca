@@ -7,8 +7,10 @@ LABEL org.opencontainers.image.description="Generates a PKCS#7 archive of the Mo
 
 RUN apk add --no-cache py3-libplist openssl
 
-ADD build_moz_bundle.py /
+ENV ROOTCA_SIGNING_KEY=""
+
+ADD build_bundle.py /
 VOLUME /github/workspace
 WORKDIR /github/workspace
 
-ENTRYPOINT [ "python3", "/build_moz_bundle.py" ]
+ENTRYPOINT [ "python3", "/build_bundle.py" ]

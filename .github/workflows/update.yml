@@ -25,6 +25,8 @@ jobs:
       - name: Update Mozilla CA Bundle
         id: update_bundle
         uses: docker://ghcr.io/tls-inspector/rootca:latest
+        env:
+          ROOTCA_SIGNING_KEY: ${{ secrets.ROOTCA_SIGNING_KEY }}
       - name: Commit Changes
         id: commit
         uses: stefanzweifel/git-auto-commit-action@0b007fbd1180b8e3a3668b21c6517392fe8f26eb # pin@v4
@@ -45,4 +47,7 @@ jobs:
           tag_name: "${{ env.TAG_NAME}}"
           files: |
             BundleMetadata.plist
+            BundleMetadata.plist.sig
             moz_ca_bundle.p7b
+            moz_ca_bundle.p7b.sig
+            signing_key.pem

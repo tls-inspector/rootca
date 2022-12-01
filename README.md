@@ -20,6 +20,8 @@ script runs.
 The Github workflow executes the container image hosted on Github Container Registry and, if any changes to the bundle
 were made, will tag and create a new release.
 
+A signature of the bundle and metadata file is provided, along with the associated public key needed for verification.
+
 The repository is entirly self-contained and can be self-hosted or modified.
 
 ## License
