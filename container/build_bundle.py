@@ -9,7 +9,7 @@ from pathlib import Path
 
 wd = os.getcwd()
 
-mozilla_bundle_path = os.path.join(wd, "moz_ca_bundle.plist")
+mozilla_bundle_path = os.path.join(wd, "moz_ca_bundle.p7b")
 bundle_metadata_path = os.path.join(wd, "BundleMetadata.plist")
 
 latest_mozilla_sha256 = urllib.request.urlopen(
@@ -19,7 +19,7 @@ latest_mozilla_sha256 = urllib.request.urlopen(
 def make_mozilla_bundle():
     """make the mozilla root CA certificate bundle"""
 
-    print("building Mozilla root CA certificate bundle...")
+    print("building mozilla root CA certificate bundle...")
 
     moz_bundle = urllib.request.urlopen("https://curl.se/ca/cacert.pem").read()
 
@@ -87,7 +87,8 @@ def make_mozilla_bundle():
             mozilla_sha256=latest_mozilla_sha256,
         ), fp, fmt=plistlib.PlistFormat.FMT_XML)
 
-    print("bundle created with " + str(len(pem_certs)) + " certificates")
+    print("mozilla bundle created with " +
+          str(len(pem_certs)) + " certificates")
 
 
 def sign_file(file_name, pkey):
@@ -118,6 +119,8 @@ def sign_file(file_name, pkey):
             "-hex",
             file_name
         ], check=True)
+
+        print("created signature of " + file_name)
     finally:
         os.unlink(keypath)
 
@@ -125,7 +128,7 @@ def sign_file(file_name, pkey):
 if os.path.exists(bundle_metadata_path):
     plist = plistlib.loads(Path(bundle_metadata_path).read_bytes(),
                            fmt=plistlib.PlistFormat.FMT_XML)
-    current_mozilla_sha256 = plist['mozilla_sha256']
+    current_mozilla_sha256 = plist.get('mozilla_sha256')
 
     if current_mozilla_sha256 != latest_mozilla_sha256:
         make_mozilla_bundle()
