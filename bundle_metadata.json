@@ -1,0 +1,12 @@
+{
+  "mozilla": {
+    "data": "2022-10-11T03:12:05Z",
+    "sha_256": "2cff03f9efdaf52626bd1b451d700605dc1ea000c5da56bd0fc59f8f43071040",
+    "num_certs": 142
+  },
+  "microsoft": {
+    "data": "2022-12-06T01:13:46Z",
+    "sha_256": "49C38C563176DCD0F1AC74F0D3420D34881E8B036763081D4D44709DB64DD8EE",
+    "num_certs": 233
+  }
+}
