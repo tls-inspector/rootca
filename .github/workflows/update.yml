@@ -26,7 +26,8 @@ jobs:
         id: update_bundle
         uses: docker://ghcr.io/tls-inspector/rootca:latest
         env:
-          ROOTCA_SIGNING_KEY: ${{ secrets.ROOTCA_SIGNING_KEY }}
+          ROOTCA_SIGNING_PRIVATE_KEY: ${{ secrets.ROOTCA_SIGNING_PRIVATE_KEY }}
+          ROOTCA_SIGNING_PUBLIC_KEY: ${{ secrets.ROOTCA_SIGNING_PUBLIC_KEY }}
       - name: Commit Changes
         id: commit
         uses: stefanzweifel/git-auto-commit-action@3ea6ae190baf489ba007f7c92608f33ce20ef04a # pin@v4
@@ -41,12 +42,14 @@ jobs:
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # pin@v1
         if: steps.commit.outputs.changes_detected == 'true'
         with:
-          name: CA Bundle ${{ github.event.repository.updated_at}}"
+          name: CA Bundle ${{ github.event.repository.updated_at}}
           target_commitish: ${{ steps.commit.commit_hash }}
           tag_name: "${{ env.TAG_NAME}}"
           files: |
-            bundle_metadata.plist
-            bundle_metadata.plist.sig
+            bundle_metadata.json
+            bundle_metadata.json.sig
             mozilla_ca_bundle.p7b
             mozilla_ca_bundle.p7b.sig
+            microsoft_ca_bundle.p7b
+            microsoft_ca_bundle.p7b.sig
             signing_key.pem

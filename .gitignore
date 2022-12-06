@@ -1,4 +1,11 @@
+container/rootca
 *.plist
+*.json
+*.sig
 *.p7b
-!/bundle_metadata.plist
+!/bundle_metadata.json
+!/bundle_metadata.json.sig
 !/mozilla_ca_bundle.p7b
+!/mozilla_ca_bundle.p7b.sig
+!/microsoft_ca_bundle.p7b
+!/microsoft_ca_bundle.p7b.sig
