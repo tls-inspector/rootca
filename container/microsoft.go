@@ -22,7 +22,7 @@ func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 
 	currentSHA := getMicrosoftSHA(caCSV)
 
-	if metadata != nil && metadata.SHA256 == currentSHA {
+	if metadata != nil && metadata.Key == currentSHA {
 		log.Printf("Microsoft bundle is up-to-date")
 		return metadata, nil
 	}
@@ -95,12 +95,11 @@ func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 		if err := downloadFile(fmt.Sprintf("http://ctldl.windowsupdate.com/msdownload/update/v3/static/trustedr/en/%s.crt", certSHA1), derCertPath); err != nil {
 			return nil, err
 		}
-		log.Printf("Downloaded %s.crt", certSHA1)
 		if err := convertDerToPem(derCertPath, certPath); err != nil {
 			return nil, err
 		}
 		os.Remove(derCertPath)
-		log.Printf("Converted %s.crt from DER to PEM", certSHA1)
+		log.Printf("Downloaded and converted %s.crt", certSHA1)
 		certPaths[i] = certPath
 	}
 
@@ -114,7 +113,7 @@ func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 
 		if !thumbprintMap[sha] {
 			os.Remove(path.Join("microsoft_certs", certFile.Name()))
-			log.Printf("Removed unused certificate %s", certFile.Name())
+			log.Printf("Removed unused Microsoft certificate %s", certFile.Name())
 		}
 	}
 

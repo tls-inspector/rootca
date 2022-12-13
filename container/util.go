@@ -6,6 +6,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -106,11 +107,13 @@ func downloadFile(url string, filePath string) error {
 func verifyCertPEMSHA(certPath string, expectedSHA256 string) bool {
 	pemData, err := os.ReadFile(certPath)
 	if err != nil {
+		log.Printf("verifyCertPEMSHA(%s): %s", certPath, err.Error())
 		return false
 	}
-	_, derData := pem.Decode(pemData)
-	cert, err := x509.ParseCertificate(derData)
+	certPem, _ := pem.Decode(pemData)
+	cert, err := x509.ParseCertificate(certPem.Bytes)
 	if err != nil {
+		log.Printf("verifyCertPEMSHA(%s): %s", certPath, err.Error())
 		return false
 	}
 
@@ -118,7 +121,11 @@ func verifyCertPEMSHA(certPath string, expectedSHA256 string) bool {
 	signer.Write(cert.Raw)
 	actualSHA := fmt.Sprintf("%X", signer.Sum(nil))
 
-	return expectedSHA256 == actualSHA
+	if expectedSHA256 != actualSHA {
+		log.Printf("Bad certificate SHA. %s %s != %s", certPath, expectedSHA256, actualSHA)
+		return false
+	}
+	return true
 }
 
 func convertDerToPem(derPath, pemPath string) error {

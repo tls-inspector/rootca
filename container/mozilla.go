@@ -18,7 +18,7 @@ func buildMozillaBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 		return nil, err
 	}
 
-	if metadata != nil && metadata.SHA256 == latestSHA {
+	if metadata != nil && metadata.Key == latestSHA {
 		log.Printf("Mozilla bundle is up-to-date")
 		return metadata, nil
 	}
