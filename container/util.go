@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/sha256"
 	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"io"
 	"net/http"
@@ -48,6 +49,10 @@ func makeP7BFromCerts(certPaths []string, p7bPath string) error {
 	args := []string{
 		"crl2pkcs7",
 		"-nocrl",
+	}
+
+	if len(certPaths) == 0 {
+		return fmt.Errorf("no certificates to add to bundle")
 	}
 
 	for _, certPath := range certPaths {
@@ -98,11 +103,12 @@ func downloadFile(url string, filePath string) error {
 	return nil
 }
 
-func verifyCertDerSHA(certPath string, expectedSHA256 string) bool {
-	derData, err := os.ReadFile(certPath)
+func verifyCertPEMSHA(certPath string, expectedSHA256 string) bool {
+	pemData, err := os.ReadFile(certPath)
 	if err != nil {
 		return false
 	}
+	_, derData := pem.Decode(pemData)
 	cert, err := x509.ParseCertificate(derData)
 	if err != nil {
 		return false
@@ -113,4 +119,26 @@ func verifyCertDerSHA(certPath string, expectedSHA256 string) bool {
 	actualSHA := fmt.Sprintf("%X", signer.Sum(nil))
 
 	return expectedSHA256 == actualSHA
+}
+
+func convertDerToPem(derPath, pemPath string) error {
+	os.Remove(pemPath)
+	derData, err := os.ReadFile(derPath)
+	if err != nil {
+		return err
+	}
+	pemData := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: derData})
+	return os.WriteFile(pemPath, pemData, 0644)
+}
+
+func shaSumFile(filePath string) (string, error) {
+	f, err := os.OpenFile(filePath, os.O_RDONLY, 0644)
+	if err != nil {
+		return "", err
+	}
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%X", h.Sum(nil)), nil
 }

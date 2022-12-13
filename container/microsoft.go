@@ -26,10 +26,12 @@ func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 		log.Printf("Microsoft bundle is up-to-date")
 		return metadata, nil
 	}
+	log.Printf("Building Microsoft CA bundle")
 
 	r := csv.NewReader(strings.NewReader(caCSV))
 
 	thumbprints := [][]string{}
+	thumbprintMap := map[string]bool{}
 
 	for {
 		record, err := r.Read()
@@ -66,7 +68,8 @@ func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 			continue
 		}
 
-		thumbprints = append(thumbprints, []string{certSHA1, certSHA256})
+		thumbprints = append(thumbprints, []string{strings.ToUpper(certSHA1), strings.ToUpper(certSHA256)})
+		thumbprintMap[strings.ToUpper(certSHA1)] = true
 	}
 
 	os.Mkdir("microsoft_certs", 7644)
@@ -77,7 +80,7 @@ func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 		certPath := path.Join("microsoft_certs", certSHA1+".crt")
 
 		if _, err := os.Stat(certPath); err == nil {
-			if !verifyCertDerSHA(certPath, certSHA256) {
+			if !verifyCertPEMSHA(certPath, certSHA256) {
 				log.Printf("Cached Microsoft certificate %s.crt is bad", certSHA1)
 				os.Remove(certPath)
 			} else {
@@ -87,20 +90,50 @@ func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 			}
 		}
 
-		if err := downloadFile(fmt.Sprintf("http://ctldl.windowsupdate.com/msdownload/update/v3/static/trustedr/en/%s.crt", certSHA1), certPath); err != nil {
+		derCertPath := path.Join("microsoft_certs", certSHA1+".bin")
+
+		if err := downloadFile(fmt.Sprintf("http://ctldl.windowsupdate.com/msdownload/update/v3/static/trustedr/en/%s.crt", certSHA1), derCertPath); err != nil {
 			return nil, err
 		}
-		certPaths[i] = certPath
 		log.Printf("Downloaded %s.crt", certSHA1)
+		if err := convertDerToPem(derCertPath, certPath); err != nil {
+			return nil, err
+		}
+		os.Remove(derCertPath)
+		log.Printf("Converted %s.crt from DER to PEM", certSHA1)
+		certPaths[i] = certPath
 	}
 
+	certFiles, err := os.ReadDir("microsoft_certs")
+	if err != nil {
+		return nil, err
+	}
+	for _, certFile := range certFiles {
+		sha := strings.ToUpper(certFile.Name())
+		sha = sha[0 : len(sha)-4]
+
+		if !thumbprintMap[sha] {
+			os.Remove(path.Join("microsoft_certs", certFile.Name()))
+			log.Printf("Removed unused certificate %s", certFile.Name())
+		}
+	}
+
+	os.Remove(MicrosoftBundleName)
 	if err := makeP7BFromCerts(certPaths, MicrosoftBundleName); err != nil {
 		return nil, err
 	}
 
+	hash, err := shaSumFile(MicrosoftBundleName)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Printf("Microsoft CA bundle generated with %d certificates", len(certPaths))
+
 	return &VendorMetadata{
 		Date:     time.Now().UTC().Format("2006-01-02T15:04:05Z07:00"),
-		SHA256:   currentSHA,
+		Key:      currentSHA,
+		SHA256:   hash,
 		NumCerts: len(certPaths),
 	}, nil
 }

@@ -78,10 +78,20 @@ func buildMozillaBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 		date = time.Now().UTC()
 	}
 
-	makeP7BFromCerts(certPaths, MozillaBundleName)
+	if err := makeP7BFromCerts(certPaths, MozillaBundleName); err != nil {
+		return nil, err
+	}
+
+	hash, err := shaSumFile(MozillaBundleName)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Printf("Mozilla CA bundle generated with %d certificates", len(certPaths))
 
 	return &VendorMetadata{
-		SHA256:   latestSHA,
+		Key:      latestSHA,
+		SHA256:   hash,
 		Date:     date.Format("2006-01-02T15:04:05Z07:00"),
 		NumCerts: len(pemCerts),
 	}, nil

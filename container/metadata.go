@@ -13,7 +13,8 @@ type BundleMetadata struct {
 }
 
 type VendorMetadata struct {
-	Date     string `json:"data"`
+	Date     string `json:"date"`
+	Key      string `json:"key"`
 	SHA256   string `json:"sha_256"`
 	NumCerts int    `json:"num_certs"`
 }

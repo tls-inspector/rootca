@@ -12,6 +12,10 @@ This is provided for the TLS Inspector iOS application, but can be used by anybo
 This repository contains three components: A container image to build the certificate bundle, a github workflow to check
 for and perform updates, the actual certificate bundles itself, and a metadata file.
 
+The metadata file contains the modified date of the bundle, a SHA256 sum of the bundle file, and the number of
+certificates included. The `key` property is internal to the container and should be ignored by consumers of the
+bundles.
+
 ### Container
 
 A OCI container image is included in this repository that executes a golang application to build and update the
