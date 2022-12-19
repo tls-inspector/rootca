@@ -1,11 +1,11 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"log"
 	"os"
 	"path"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -29,35 +29,15 @@ func buildMozillaBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 		return nil, err
 	}
 
-	pemCerts := []string{}
-	pem := ""
-	isInCert := false
-	dateStr := ""
-
-	scanner := bufio.NewScanner(strings.NewReader(pemData))
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		if line == "-----BEGIN CERTIFICATE-----" {
-			isInCert = true
-		}
-
-		if isInCert {
-			pem += line + "\n"
-
-			if line == "-----END CERTIFICATE-----" {
-				pemCerts = append(pemCerts, pem)
-				pem = ""
-				isInCert = false
-			}
-		} else if strings.Contains(line, "## Certificate data from Mozilla as of:") {
-			dateStr = strings.ReplaceAll(line, "## Certificate data from Mozilla as of: ", "")
-		}
-	}
+	pemCerts := extractPemCerts(pemData)
 
 	if len(pemCerts) == 0 {
 		return nil, fmt.Errorf("no certificates")
 	}
+
+	datePatterm := regexp.MustCompile(`## Certificate data from Mozilla as of: [A-Za-z0-9 :]+`)
+	dateStr := datePatterm.FindString(pemData)
+	dateStr = strings.ReplaceAll(dateStr, "## Certificate data from Mozilla as of: ", "")
 
 	tempDir, err := os.MkdirTemp("", "mozilla")
 	if err != nil {

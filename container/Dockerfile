@@ -3,7 +3,7 @@ LABEL maintainer="Ian Spence <ian@ecnepsnai.com>"
 LABEL org.opencontainers.image.authors="Ian Spence <ian@ecnepsnai.com>"
 LABEL org.opencontainers.image.source=https://github.com/tls-inspector/rootca
 LABEL org.opencontainers.image.title="rootca"
-LABEL org.opencontainers.image.description="Generates a PKCS#7 archive of the Root CA Certificate Stores from Microsoft and Mozilla"
+LABEL org.opencontainers.image.description="Generates a PKCS#7 archive of the Root CA Certificate Stores"
 
 RUN apk add --no-cache openssl
 

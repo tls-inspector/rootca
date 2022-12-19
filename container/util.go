@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/pem"
@@ -10,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 func httpGetString(url string) (string, error) {
@@ -148,4 +150,31 @@ func shaSumFile(filePath string) (string, error) {
 		return "", err
 	}
 	return fmt.Sprintf("%X", h.Sum(nil)), nil
+}
+
+func extractPemCerts(data string) []string {
+	pemCerts := []string{}
+	pem := ""
+	isInCert := false
+
+	scanner := bufio.NewScanner(strings.NewReader(data))
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		if line == "-----BEGIN CERTIFICATE-----" {
+			isInCert = true
+		}
+
+		if isInCert {
+			pem += line + "\n"
+
+			if line == "-----END CERTIFICATE-----" {
+				pemCerts = append(pemCerts, pem)
+				pem = ""
+				isInCert = false
+			}
+		}
+	}
+
+	return pemCerts
 }

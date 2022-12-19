@@ -1,13 +1,11 @@
 package main
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"path"
-	"strings"
 	"time"
 )
 
@@ -30,28 +28,7 @@ func buildGoogleBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 		return nil, err
 	}
 
-	pemCerts := []string{}
-	pem := ""
-	isInCert := false
-
-	scanner := bufio.NewScanner(strings.NewReader(pemData))
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		if line == "-----BEGIN CERTIFICATE-----" {
-			isInCert = true
-		}
-
-		if isInCert {
-			pem += line + "\n"
-
-			if line == "-----END CERTIFICATE-----" {
-				pemCerts = append(pemCerts, pem)
-				pem = ""
-				isInCert = false
-			}
-		}
-	}
+	pemCerts := extractPemCerts(pemData)
 
 	if len(pemCerts) == 0 {
 		return nil, fmt.Errorf("no certificates")
