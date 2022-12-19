@@ -9,3 +9,5 @@ container/rootca
 !/mozilla_ca_bundle.p7b.sig
 !/microsoft_ca_bundle.p7b
 !/microsoft_ca_bundle.p7b.sig
+!/google_ca_bundle.p7b
+!/google_ca_bundle.p7b.sig

@@ -1,11 +1,11 @@
 # Root CA Certificate Stores
 
-This repository provides a PKCS#7 archive of Root CA Certificate Stores from Mozilla and Microsoft. The latest release
-of this repo always contains the most recent store, and is updated automatically whenver any changes are made.
+This repository provides a PKCS#7 archive of Root CA Certificate Stores from Mozilla, Microsoft, and Google. The latest
+release of this repo always contains the most recent store, and is updated automatically whenver any changes are made.
 
 This is provided for the TLS Inspector iOS application, but can be used by anybody within the terms of the license.
 
-*Thank you to the Mozilla team, Daniel Stenberg from curl, and Microsoft for providing the resources to make this possible!*
+*Thank you to the Mozilla team, Daniel Stenberg from curl, Microsoft, and Google for providing the resources to make this possible!*
 
 ## About
 
@@ -48,6 +48,12 @@ certificates out.
 Certificates are then downloaded directly from Windows Update and cached within the repository. Cached certificates are
 verified for integrity.
 
+The certificates are extracted and then combined into a PKCS#7 archive.
+
+### Google
+
+To generate the Google bundle, a precompiles list of certificates is downloaded from the
+[Chromium source mirror on Github](https://github.com/chromium/chromium/blob/main/net/data/ssl/chrome_root_store/root_store.certs).
 The certificates are extracted and then combined into a PKCS#7 archive.
 
 ## License

@@ -1,10 +1,16 @@
 package main
 
-import "log"
+import (
+	"log"
+	"sync"
+	"time"
+)
 
 var Version = "undefined"
 
 func main() {
+	start := time.Now()
+
 	log.Printf("rootca version %s\n", Version)
 
 	metadata, err := readMetadata()
@@ -13,36 +19,72 @@ func main() {
 	}
 
 	var mozillaMetadata *VendorMetadata
-	if metadata != nil {
-		mozillaMetadata = &metadata.Mozilla
-	}
-
-	newMozillaMetadata, err := buildMozillaBundle(mozillaMetadata)
-	if err != nil {
-		log.Fatalf("Error updating mozilla bundle: %s", err.Error())
-	}
-
-	if err := signFile(MozillaBundleName); err != nil {
-		log.Fatalf("Error signing mozilla bundle: %s", err.Error())
-	}
-
 	var microsoftMetadata *VendorMetadata
-	if metadata != nil {
-		microsoftMetadata = &metadata.Microsoft
-	}
+	var googleMetadata *VendorMetadata
 
-	newMicrosoftMetadata, err := buildMicrosoftBundle(microsoftMetadata)
-	if err != nil {
-		log.Fatalf("Error updating microsoft bundle: %s", err.Error())
-	}
+	wg := &sync.WaitGroup{}
+	wg.Add(3)
 
-	if err := signFile(MicrosoftBundleName); err != nil {
-		log.Fatalf("Error signing microsoft bundle: %s", err.Error())
-	}
+	go func() {
+		defer wg.Done()
+		if metadata != nil {
+			mozillaMetadata = &metadata.Mozilla
+		}
+
+		newMozillaMetadata, err := buildMozillaBundle(mozillaMetadata)
+		if err != nil {
+			log.Fatalf("Error updating mozilla bundle: %s", err.Error())
+		}
+
+		if err := signFile(MozillaBundleName); err != nil {
+			log.Fatalf("Error signing mozilla bundle: %s", err.Error())
+		}
+
+		mozillaMetadata = newMozillaMetadata
+	}()
+
+	go func() {
+		defer wg.Done()
+		if metadata != nil {
+			microsoftMetadata = &metadata.Microsoft
+		}
+
+		newMicrosoftMetadata, err := buildMicrosoftBundle(microsoftMetadata)
+		if err != nil {
+			log.Fatalf("Error updating microsoft bundle: %s", err.Error())
+		}
+
+		if err := signFile(MicrosoftBundleName); err != nil {
+			log.Fatalf("Error signing microsoft bundle: %s", err.Error())
+		}
+
+		microsoftMetadata = newMicrosoftMetadata
+	}()
+
+	go func() {
+		defer wg.Done()
+		if metadata != nil {
+			googleMetadata = &metadata.Google
+		}
+
+		newGoogleMetadata, err := buildGoogleBundle(googleMetadata)
+		if err != nil {
+			log.Fatalf("Error updating google bundle: %s", err.Error())
+		}
+
+		if err := signFile(GoogleBundleName); err != nil {
+			log.Fatalf("Error signing google bundle: %s", err.Error())
+		}
+
+		googleMetadata = newGoogleMetadata
+	}()
+
+	wg.Wait()
 
 	newMetadata := BundleMetadata{
-		Mozilla:   *newMozillaMetadata,
-		Microsoft: *newMicrosoftMetadata,
+		Mozilla:   *mozillaMetadata,
+		Microsoft: *microsoftMetadata,
+		Google:    *googleMetadata,
 	}
 
 	if err := writeMetadata(newMetadata); err != nil {
@@ -53,5 +95,5 @@ func main() {
 		log.Fatalf("Error signing bundle metadata: %s", err.Error())
 	}
 
-	log.Println("Finished")
+	log.Printf("Finished in %s\n", time.Since(start).String())
 }
