@@ -45,8 +45,7 @@ To generate the Microsoft bundle, a precompiled CSV of certificates included wit
 includes certificates that are disabled, expired, and also for purposes other than server verification. We filter these
 certificates out.
 
-Certificates are then downloaded directly from Windows Update and cached within the repository. Cached certificates are
-verified for integrity.
+Certificates are then downloaded directly from Windows Update and verified for integrity.
 
 The certificates are extracted and then combined into a PKCS#7 archive.
 

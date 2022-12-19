@@ -24,7 +24,7 @@ func buildMozillaBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 	}
 	log.Printf("Building Mozilla CA bundle")
 
-	pemData, err := httpGetString("https://curl.se/ca/cacert.pem")
+	pemData, err := httpGetBytes("https://curl.se/ca/cacert.pem")
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +36,7 @@ func buildMozillaBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 	}
 
 	datePatterm := regexp.MustCompile(`## Certificate data from Mozilla as of: [A-Za-z0-9 :]+`)
-	dateStr := datePatterm.FindString(pemData)
+	dateStr := string(datePatterm.Find(pemData))
 	dateStr = strings.ReplaceAll(dateStr, "## Certificate data from Mozilla as of: ", "")
 
 	tempDir, err := os.MkdirTemp("", "mozilla")
@@ -48,7 +48,7 @@ func buildMozillaBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 	certPaths := make([]string, len(pemCerts))
 	for i := 0; i < len(pemCerts); i++ {
 		certPaths[i] = path.Join(tempDir, fmt.Sprintf("cert_%d.crt", i))
-		if err := os.WriteFile(certPaths[i], []byte(pemCerts[i]), 0644); err != nil {
+		if err := os.WriteFile(certPaths[i], pemCerts[i], 0644); err != nil {
 			return nil, err
 		}
 	}

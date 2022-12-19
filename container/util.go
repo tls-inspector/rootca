@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/pem"
@@ -11,21 +12,28 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"strings"
 )
 
-func httpGetString(url string) (string, error) {
+func httpGetBytes(url string) ([]byte, error) {
 	r, err := httpGet(url)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	defer r.Close()
 	data, err := io.ReadAll(r)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
+	return data, nil
+}
+
+func httpGetString(url string) (string, error) {
+	data, err := httpGetBytes(url)
+	if err != nil {
+		return "", err
+	}
 	return string(data), nil
 }
 
@@ -112,22 +120,29 @@ func verifyCertPEMSHA(certPath string, expectedSHA256 string) bool {
 		log.Printf("verifyCertPEMSHA(%s): %s", certPath, err.Error())
 		return false
 	}
-	certPem, _ := pem.Decode(pemData)
-	cert, err := x509.ParseCertificate(certPem.Bytes)
+	actualSHA, err := getCertPemSHA(pemData)
 	if err != nil {
 		log.Printf("verifyCertPEMSHA(%s): %s", certPath, err.Error())
 		return false
 	}
-
-	signer := sha256.New()
-	signer.Write(cert.Raw)
-	actualSHA := fmt.Sprintf("%X", signer.Sum(nil))
 
 	if expectedSHA256 != actualSHA {
 		log.Printf("Bad certificate SHA. %s %s != %s", certPath, expectedSHA256, actualSHA)
 		return false
 	}
 	return true
+}
+
+func getCertPemSHA(certData []byte) (string, error) {
+	certPem, _ := pem.Decode(certData)
+	cert, err := x509.ParseCertificate(certPem.Bytes)
+	if err != nil {
+		return "", nil
+	}
+
+	signer := sha256.New()
+	signer.Write(cert.Raw)
+	return fmt.Sprintf("%X", signer.Sum(nil)), nil
 }
 
 func convertDerToPem(derPath, pemPath string) error {
@@ -152,29 +167,35 @@ func shaSumFile(filePath string) (string, error) {
 	return fmt.Sprintf("%X", h.Sum(nil)), nil
 }
 
-func extractPemCerts(data string) []string {
-	pemCerts := []string{}
-	pem := ""
+func extractPemCerts(data []byte) [][]byte {
+	pemCerts := [][]byte{}
+	pem := []byte{}
 	isInCert := false
 
-	scanner := bufio.NewScanner(strings.NewReader(data))
+	scanner := bufio.NewScanner(bytes.NewReader(data))
 	for scanner.Scan() {
-		line := scanner.Text()
+		line := scanner.Bytes()
 
-		if line == "-----BEGIN CERTIFICATE-----" {
+		if bytes.Equal(line, []byte("-----BEGIN CERTIFICATE-----")) {
 			isInCert = true
 		}
 
 		if isInCert {
-			pem += line + "\n"
+			pem = append(pem, line...)
+			pem = append(pem, byte('\n'))
 
-			if line == "-----END CERTIFICATE-----" {
+			if bytes.Equal(line, []byte("-----END CERTIFICATE-----")) {
 				pemCerts = append(pemCerts, pem)
-				pem = ""
+				pem = []byte{}
 				isInCert = false
 			}
 		}
 	}
 
 	return pemCerts
+}
+
+func fileExists(inPath string) bool {
+	_, err := os.Stat(inPath)
+	return err == nil
 }

@@ -23,7 +23,7 @@ func buildGoogleBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 	}
 	log.Printf("Building Google CA bundle")
 
-	pemData, err := httpGetString("https://raw.githubusercontent.com/chromium/chromium/main/net/data/ssl/chrome_root_store/root_store.certs")
+	pemData, err := httpGetBytes("https://raw.githubusercontent.com/chromium/chromium/main/net/data/ssl/chrome_root_store/root_store.certs")
 	if err != nil {
 		return nil, err
 	}

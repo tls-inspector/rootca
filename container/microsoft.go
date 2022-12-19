@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"os/exec"
 	"path"
 	"strings"
 	"time"
@@ -30,7 +31,11 @@ func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 
 	r := csv.NewReader(strings.NewReader(caCSV))
 
-	thumbprints := [][]string{}
+	type thumbprintType struct {
+		SHA1   string
+		SHA256 string
+	}
+	thumbprints := []thumbprintType{}
 	thumbprintMap := map[string]bool{}
 
 	for {
@@ -68,18 +73,28 @@ func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 			continue
 		}
 
-		thumbprints = append(thumbprints, []string{strings.ToUpper(certSHA1), strings.ToUpper(certSHA256)})
-		thumbprintMap[strings.ToUpper(certSHA1)] = true
+		thumbprints = append(thumbprints, thumbprintType{strings.ToUpper(certSHA1), strings.ToUpper(certSHA256)})
+		thumbprintMap[strings.ToUpper(certSHA256)] = true
 	}
 
-	os.Mkdir("microsoft_certs", 7644)
+	tmpDir, err := os.MkdirTemp("", "microsoft")
+	if err != nil {
+		panic(err)
+	}
+	defer os.RemoveAll(tmpDir)
+	if fileExists(MicrosoftBundleName) {
+		if err := extractMicrosoftCerts(tmpDir); err != nil {
+			return nil, fmt.Errorf("error extracting microsoft certificates: %s", err.Error())
+		}
+	}
+
 	certPaths := make([]string, len(thumbprints))
 	for i, tp := range thumbprints {
-		certSHA1 := tp[0]
-		certSHA256 := tp[1]
-		certPath := path.Join("microsoft_certs", certSHA1+".crt")
+		certSHA1 := tp.SHA1
+		certSHA256 := tp.SHA256
+		certPath := path.Join(tmpDir, certSHA256+".crt")
 
-		if _, err := os.Stat(certPath); err == nil {
+		if fileExists(certPath) {
 			if !verifyCertPEMSHA(certPath, certSHA256) {
 				log.Printf("Cached Microsoft certificate %s.crt is bad", certSHA1)
 				os.Remove(certPath)
@@ -90,7 +105,7 @@ func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 			}
 		}
 
-		derCertPath := path.Join("microsoft_certs", certSHA1+".bin")
+		derCertPath := path.Join(tmpDir, certSHA1+".bin")
 
 		if err := downloadFile(fmt.Sprintf("http://ctldl.windowsupdate.com/msdownload/update/v3/static/trustedr/en/%s.crt", certSHA1), derCertPath); err != nil {
 			return nil, err
@@ -103,7 +118,7 @@ func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 		certPaths[i] = certPath
 	}
 
-	certFiles, err := os.ReadDir("microsoft_certs")
+	certFiles, err := os.ReadDir(tmpDir)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +127,7 @@ func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 		sha = sha[0 : len(sha)-4]
 
 		if !thumbprintMap[sha] {
-			os.Remove(path.Join("microsoft_certs", certFile.Name()))
+			os.Remove(path.Join(tmpDir, certFile.Name()))
 			log.Printf("Removed unused Microsoft certificate %s", certFile.Name())
 		}
 	}
@@ -135,6 +150,24 @@ func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 		SHA256:   hash,
 		NumCerts: len(certPaths),
 	}, nil
+}
+
+func extractMicrosoftCerts(outputDir string) error {
+	output, err := exec.Command("openssl", "pkcs7", "-in", MicrosoftBundleName, "-print_certs").CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("error extracting certs: %s", err.Error())
+	}
+
+	pemCerts := extractPemCerts(output)
+	for _, pemCert := range pemCerts {
+		sha, err := getCertPemSHA(pemCert)
+		if err != nil {
+			return fmt.Errorf("error parsing certificate: %s", err.Error())
+		}
+		fileName := path.Join(outputDir, sha+".crt")
+		os.WriteFile(fileName, pemCert, 0644)
+	}
+	return nil
 }
 
 func getMicrosoftSHA(csvData string) string {
