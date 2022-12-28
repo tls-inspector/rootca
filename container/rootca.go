@@ -41,6 +41,9 @@ func main() {
 		}
 
 		mozillaMetadata = newMozillaMetadata
+		if err := CertificatesFromP7("Mozilla", MozillaBundleName); err != nil {
+			log.Fatalf("Error generating report from Mozilla bundle: %s", err.Error())
+		}
 	}()
 
 	go func() {
@@ -59,6 +62,9 @@ func main() {
 		}
 
 		microsoftMetadata = newMicrosoftMetadata
+		if err := CertificatesFromP7("Microsoft", MicrosoftBundleName); err != nil {
+			log.Fatalf("Error generating report from Microsoft bundle: %s", err.Error())
+		}
 	}()
 
 	go func() {
@@ -77,6 +83,9 @@ func main() {
 		}
 
 		googleMetadata = newGoogleMetadata
+		if err := CertificatesFromP7("Google", GoogleBundleName); err != nil {
+			log.Fatalf("Error generating report from Google bundle: %s", err.Error())
+		}
 	}()
 
 	wg.Wait()
@@ -93,6 +102,10 @@ func main() {
 
 	if err := signFile(BundleMetadataName); err != nil {
 		log.Fatalf("Error signing bundle metadata: %s", err.Error())
+	}
+
+	if err := ExportReport(); err != nil {
+		log.Fatalf("Error exporting certificate report: %s", err.Error())
 	}
 
 	log.Printf("Finished in %s\n", time.Since(start).String())
