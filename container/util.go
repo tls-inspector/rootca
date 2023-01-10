@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"crypto/x509"
+	"encoding/hex"
 	"encoding/pem"
 	"fmt"
 	"io"
@@ -12,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"sort"
 )
 
 func httpGetBytes(url string) ([]byte, error) {
@@ -198,4 +200,25 @@ func extractPemCerts(data []byte) [][]byte {
 func fileExists(inPath string) bool {
 	_, err := os.Stat(inPath)
 	return err == nil
+}
+
+func checksumCertShaList(thumbprints []string) string {
+	bThumbprints := make([][]byte, len(thumbprints))
+	for i, thumbprintStr := range thumbprints {
+		thumbprint, err := hex.DecodeString(thumbprintStr)
+		if err != nil {
+			panic("hex: " + err.Error())
+		}
+		bThumbprints[i] = thumbprint
+	}
+	sort.Slice(bThumbprints, func(i, j int) bool {
+		return bytes.Compare(bThumbprints[i], bThumbprints[j]) >= 1
+	})
+	h := sha256.New()
+	for _, thumbprint := range bThumbprints {
+		if _, err := h.Write(thumbprint); err != nil {
+			panic("sha: " + err.Error())
+		}
+	}
+	return fmt.Sprintf("%X", h.Sum(nil))
 }

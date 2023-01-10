@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/sha256"
 	"encoding/csv"
 	"fmt"
 	"io"
@@ -21,22 +20,18 @@ func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 		return nil, err
 	}
 
-	currentSHA := getMicrosoftSHA(caCSV)
-
-	if metadata != nil && metadata.Key == currentSHA {
-		log.Printf("Microsoft bundle is up-to-date")
-		return metadata, nil
-	}
-	log.Printf("Building Microsoft CA bundle")
-
 	r := csv.NewReader(strings.NewReader(caCSV))
 
-	type thumbprintType struct {
-		SHA1   string
-		SHA256 string
+	type microsoftCert struct {
+		Status   string
+		SHA1     string
+		SHA256   string
+		MSEKU    string
+		NotAfter time.Time
 	}
-	thumbprints := []thumbprintType{}
+	certificates := []microsoftCert{}
 	thumbprintMap := map[string]bool{}
+	thumbprintSlice := []string{}
 
 	for {
 		record, err := r.Read()
@@ -73,9 +68,26 @@ func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 			continue
 		}
 
-		thumbprints = append(thumbprints, thumbprintType{strings.ToUpper(certSHA1), strings.ToUpper(certSHA256)})
-		thumbprintMap[strings.ToUpper(certSHA256)] = true
+		certificates = append(certificates, microsoftCert{
+			Status:   status,
+			SHA1:     certSHA1,
+			SHA256:   certSHA256,
+			MSEKU:    msEKU,
+			NotAfter: notAfter,
+		})
+		thumbprintMap[certSHA256] = true
+		thumbprintSlice = append(thumbprintSlice, certSHA256)
 	}
+
+	currentSHA := checksumCertShaList(thumbprintSlice)
+	if metadata != nil {
+		if metadata.Key == currentSHA {
+			log.Printf("Microsoft bundle is up-to-date")
+			return metadata, nil
+		}
+		log.Printf("Detected changes to Microsoft bundle. LastSHA='%s' LatestSHA='%s'", metadata.Key, currentSHA)
+	}
+	log.Printf("Building Microsoft CA bundle")
 
 	tmpDir, err := os.MkdirTemp("", "microsoft")
 	if err != nil {
@@ -88,15 +100,13 @@ func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 		}
 	}
 
-	certPaths := make([]string, len(thumbprints))
-	for i, tp := range thumbprints {
-		certSHA1 := tp.SHA1
-		certSHA256 := tp.SHA256
-		certPath := path.Join(tmpDir, certSHA256+".crt")
+	certPaths := make([]string, len(certificates))
+	for i, cert := range certificates {
+		certPath := path.Join(tmpDir, cert.SHA256+".crt")
 
 		if fileExists(certPath) {
-			if !verifyCertPEMSHA(certPath, certSHA256) {
-				log.Printf("Cached Microsoft certificate %s.crt is bad", certSHA1)
+			if !verifyCertPEMSHA(certPath, cert.SHA256) {
+				log.Printf("Cached Microsoft certificate %s.crt is bad", cert.SHA1)
 				os.Remove(certPath)
 			} else {
 				// Cached cert is good
@@ -105,16 +115,16 @@ func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 			}
 		}
 
-		derCertPath := path.Join(tmpDir, certSHA1+".bin")
+		derCertPath := path.Join(tmpDir, cert.SHA1+".bin")
 
-		if err := downloadFile(fmt.Sprintf("http://ctldl.windowsupdate.com/msdownload/update/v3/static/trustedr/en/%s.crt", certSHA1), derCertPath); err != nil {
+		if err := downloadFile(fmt.Sprintf("http://ctldl.windowsupdate.com/msdownload/update/v3/static/trustedr/en/%s.crt", cert.SHA1), derCertPath); err != nil {
 			return nil, err
 		}
 		if err := convertDerToPem(derCertPath, certPath); err != nil {
 			return nil, err
 		}
 		os.Remove(derCertPath)
-		log.Printf("Downloaded and converted %s.crt", certSHA1)
+		log.Printf("Downloaded and converted %s.crt", cert.SHA1)
 		certPaths[i] = certPath
 	}
 
@@ -124,6 +134,9 @@ func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 	}
 	for _, certFile := range certFiles {
 		sha := strings.ToUpper(certFile.Name())
+		if len(sha) != 68 {
+			continue
+		}
 		sha = sha[0 : len(sha)-4]
 
 		if !thumbprintMap[sha] {
@@ -168,10 +181,4 @@ func extractMicrosoftCerts(outputDir string) error {
 		os.WriteFile(fileName, pemCert, 0644)
 	}
 	return nil
-}
-
-func getMicrosoftSHA(csvData string) string {
-	dgst := sha256.New()
-	dgst.Write([]byte(csvData))
-	return fmt.Sprintf("%X", dgst.Sum(nil))
 }
