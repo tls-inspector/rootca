@@ -11,6 +11,7 @@ type BundleMetadata struct {
 	Mozilla   VendorMetadata `json:"mozilla"`
 	Microsoft VendorMetadata `json:"microsoft"`
 	Google    VendorMetadata `json:"google"`
+	Apple     VendorMetadata `json:"apple"`
 }
 
 type VendorMetadata struct {

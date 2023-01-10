@@ -54,5 +54,7 @@ jobs:
             microsoft_ca_bundle.p7b.sig
             google_ca_bundle.p7b
             google_ca_bundle.p7b.sig
+            apple_ca_bundle.p7b
+            apple_ca_bundle.p7b.sig
             signing_key.pem
             certificates.csv

@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path"
 	"sort"
 )
 
@@ -129,7 +130,7 @@ func verifyCertPEMSHA(certPath string, expectedSHA256 string) bool {
 	}
 
 	if expectedSHA256 != actualSHA {
-		log.Printf("Bad certificate SHA. %s %s != %s", certPath, expectedSHA256, actualSHA)
+		log.Printf("Bad certificate SHA256. %s %s != %s", certPath, expectedSHA256, actualSHA)
 		return false
 	}
 	return true
@@ -147,14 +148,16 @@ func getCertPemSHA(certData []byte) (string, error) {
 	return fmt.Sprintf("%X", signer.Sum(nil)), nil
 }
 
-func convertDerToPem(derPath, pemPath string) error {
+func convertDerToPem(derPath, pemPath string) (string, error) {
 	os.Remove(pemPath)
 	derData, err := os.ReadFile(derPath)
 	if err != nil {
-		return err
+		return "", err
 	}
+	h := sha256.New()
+	h.Write(derData)
 	pemData := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: derData})
-	return os.WriteFile(pemPath, pemData, 0644)
+	return fmt.Sprintf("%X", h.Sum(nil)), os.WriteFile(pemPath, pemData, 0644)
 }
 
 func shaSumFile(filePath string) (string, error) {
@@ -221,4 +224,24 @@ func checksumCertShaList(thumbprints []string) string {
 		}
 	}
 	return fmt.Sprintf("%X", h.Sum(nil))
+}
+
+// extractP7B will extract the given PKCS#7 bundle and save all certificates in PEM format with the filename
+// <SHA-256>.crt
+func extractP7B(bundlePath, outputDir string) error {
+	output, err := exec.Command("openssl", "pkcs7", "-in", bundlePath, "-print_certs").CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("error extracting certs: %s", err.Error())
+	}
+
+	pemCerts := extractPemCerts(output)
+	for _, pemCert := range pemCerts {
+		sha, err := getCertPemSHA(pemCert)
+		if err != nil {
+			return fmt.Errorf("error parsing certificate: %s", err.Error())
+		}
+		fileName := path.Join(outputDir, sha+".crt")
+		os.WriteFile(fileName, pemCert, 0644)
+	}
+	return nil
 }

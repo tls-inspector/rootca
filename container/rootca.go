@@ -21,9 +21,10 @@ func main() {
 	var mozillaMetadata *VendorMetadata
 	var microsoftMetadata *VendorMetadata
 	var googleMetadata *VendorMetadata
+	var appleMetadata *VendorMetadata
 
 	wg := &sync.WaitGroup{}
-	wg.Add(3)
+	wg.Add(4)
 
 	go func() {
 		defer wg.Done()
@@ -41,9 +42,6 @@ func main() {
 		}
 
 		mozillaMetadata = newMozillaMetadata
-		if err := CertificatesFromP7("Mozilla", MozillaBundleName); err != nil {
-			log.Fatalf("Error generating report from Mozilla bundle: %s", err.Error())
-		}
 	}()
 
 	go func() {
@@ -62,9 +60,6 @@ func main() {
 		}
 
 		microsoftMetadata = newMicrosoftMetadata
-		if err := CertificatesFromP7("Microsoft", MicrosoftBundleName); err != nil {
-			log.Fatalf("Error generating report from Microsoft bundle: %s", err.Error())
-		}
 	}()
 
 	go func() {
@@ -83,9 +78,24 @@ func main() {
 		}
 
 		googleMetadata = newGoogleMetadata
-		if err := CertificatesFromP7("Google", GoogleBundleName); err != nil {
-			log.Fatalf("Error generating report from Google bundle: %s", err.Error())
+	}()
+
+	go func() {
+		defer wg.Done()
+		if metadata != nil {
+			appleMetadata = &metadata.Apple
 		}
+
+		newAppleMetadata, err := buildAppleBundle(appleMetadata)
+		if err != nil {
+			log.Fatalf("Error updating apple bundle: %s", err.Error())
+		}
+
+		if err := signFile(AppleBundleName); err != nil {
+			log.Fatalf("Error signing apple bundle: %s", err.Error())
+		}
+
+		appleMetadata = newAppleMetadata
 	}()
 
 	wg.Wait()
@@ -94,6 +104,7 @@ func main() {
 		Mozilla:   *mozillaMetadata,
 		Microsoft: *microsoftMetadata,
 		Google:    *googleMetadata,
+		Apple:     *appleMetadata,
 	}
 
 	if err := writeMetadata(newMetadata); err != nil {

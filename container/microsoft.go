@@ -6,7 +6,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"os/exec"
 	"path"
 	"strings"
 	"time"
@@ -95,7 +94,7 @@ func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 	}
 	defer os.RemoveAll(tmpDir)
 	if fileExists(MicrosoftBundleName) {
-		if err := extractMicrosoftCerts(tmpDir); err != nil {
+		if err := extractP7B(MicrosoftBundleName, tmpDir); err != nil {
 			return nil, fmt.Errorf("error extracting microsoft certificates: %s", err.Error())
 		}
 	}
@@ -120,9 +119,14 @@ func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 		if err := downloadFile(fmt.Sprintf("http://ctldl.windowsupdate.com/msdownload/update/v3/static/trustedr/en/%s.crt", cert.SHA1), derCertPath); err != nil {
 			return nil, err
 		}
-		if err := convertDerToPem(derCertPath, certPath); err != nil {
+		dlThumbprint, err := convertDerToPem(derCertPath, certPath)
+		if err != nil {
 			return nil, err
 		}
+		if dlThumbprint != cert.SHA256 {
+			return nil, fmt.Errorf("downloaded certificate verification failed")
+		}
+
 		os.Remove(derCertPath)
 		log.Printf("Downloaded and converted %s.crt", cert.SHA1)
 		certPaths[i] = certPath
@@ -163,22 +167,4 @@ func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 		SHA256:   hash,
 		NumCerts: len(certPaths),
 	}, nil
-}
-
-func extractMicrosoftCerts(outputDir string) error {
-	output, err := exec.Command("openssl", "pkcs7", "-in", MicrosoftBundleName, "-print_certs").CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("error extracting certs: %s", err.Error())
-	}
-
-	pemCerts := extractPemCerts(output)
-	for _, pemCert := range pemCerts {
-		sha, err := getCertPemSHA(pemCert)
-		if err != nil {
-			return fmt.Errorf("error parsing certificate: %s", err.Error())
-		}
-		fileName := path.Join(outputDir, sha+".crt")
-		os.WriteFile(fileName, pemCert, 0644)
-	}
-	return nil
 }
