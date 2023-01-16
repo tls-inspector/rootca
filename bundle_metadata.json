@@ -12,10 +12,10 @@
     "num_certs": 232
   },
   "google": {
-    "date": "2022-08-18T16:13:36Z",
-    "key": "648fb97fc504e41ffe8149ab88767b9c3ba6cd37",
-    "sha_256": "411957862E438317BC1F9A59398F83BBDDB76831A26D627EB4FD774016839747",
-    "num_certs": 140
+    "date": "2023-01-14T14:32:37Z",
+    "key": "ea26fb93d932b1f6b642435cabcaf2ab85dc7604",
+    "sha_256": "1941AA675D2F708F576874934FA459893740227D0D26127C99674C43D5AF8D6C",
+    "num_certs": 138
   },
   "apple": {
     "date": "2023-01-10T05:30:14Z",
