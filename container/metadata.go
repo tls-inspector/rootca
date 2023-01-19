@@ -16,10 +16,16 @@ type BundleMetadata struct {
 }
 
 type VendorMetadata struct {
-	Date     string `json:"date"`
-	Key      string `json:"key"`
-	SHA256   string `json:"sha_256"`
-	NumCerts int    `json:"num_certs"`
+	Date     string                       `json:"date"`
+	Key      string                       `json:"key"`
+	Bundles  map[string]BundleFingerprint `json:"bundles"`
+	NumCerts int                          `json:"num_certs"`
+}
+
+type BundleFingerprint struct {
+	SHA1   string `json:"sha1"`
+	SHA256 string `json:"sha256"`
+	SHA512 string `json:"sha512"`
 }
 
 func readMetadata() (*BundleMetadata, error) {

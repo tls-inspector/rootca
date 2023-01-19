@@ -38,7 +38,7 @@ func main() {
 			log.Fatalf("Error updating mozilla bundle: %s", err.Error())
 		}
 
-		if err := signFile(MozillaBundleName); err != nil {
+		if err := signBundle(MozillaBundleName); err != nil {
 			log.Fatalf("Error signing mozilla bundle: %s", err.Error())
 		}
 
@@ -56,7 +56,7 @@ func main() {
 			log.Fatalf("Error updating microsoft bundle: %s", err.Error())
 		}
 
-		if err := signFile(MicrosoftBundleName); err != nil {
+		if err := signBundle(MicrosoftBundleName); err != nil {
 			log.Fatalf("Error signing microsoft bundle: %s", err.Error())
 		}
 
@@ -74,7 +74,7 @@ func main() {
 			log.Fatalf("Error updating google bundle: %s", err.Error())
 		}
 
-		if err := signFile(GoogleBundleName); err != nil {
+		if err := signBundle(GoogleBundleName); err != nil {
 			log.Fatalf("Error signing google bundle: %s", err.Error())
 		}
 
@@ -92,7 +92,7 @@ func main() {
 			log.Fatalf("Error updating apple bundle: %s", err.Error())
 		}
 
-		if err := signFile(AppleBundleName); err != nil {
+		if err := signBundle(AppleBundleName); err != nil {
 			log.Fatalf("Error signing apple bundle: %s", err.Error())
 		}
 
@@ -109,7 +109,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error updating tlsinspector bundle: %s", err.Error())
 	}
-	if err := signFile(TLSInspectorBundleName); err != nil {
+	if err := signBundle(TLSInspectorBundleName); err != nil {
 		log.Fatalf("Error signing tlsinspector bundle: %s", err.Error())
 	}
 	tlsinspectorMetadata = newTLSInspectorMetadata

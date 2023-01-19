@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-const MicrosoftBundleName = "microsoft_ca_bundle.p7b"
+const MicrosoftBundleName = "microsoft_ca_bundle"
 
 func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 	caCSV, err := httpGetString("https://ccadb-public.secure.force.com/microsoft/IncludedCACertificateReportForMSFTCSV")
@@ -80,7 +80,7 @@ func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 
 	currentSHA := checksumCertShaList(thumbprintSlice)
 	if metadata != nil {
-		if metadata.Key == currentSHA {
+		if isBundleUpToDate(currentSHA, metadata.Key, MicrosoftBundleName) {
 			log.Printf("Microsoft bundle is up-to-date")
 			return metadata, nil
 		}
@@ -93,8 +93,8 @@ func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 		panic(err)
 	}
 	defer os.RemoveAll(tmpDir)
-	if fileExists(MicrosoftBundleName) {
-		if err := extractP7B(MicrosoftBundleName, tmpDir); err != nil {
+	if fileExists(MicrosoftBundleName + ".p7b") {
+		if err := extractP7B(MicrosoftBundleName+".p7b", tmpDir); err != nil {
 			return nil, fmt.Errorf("error extracting microsoft certificates: %s", err.Error())
 		}
 	}
@@ -149,12 +149,7 @@ func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 		}
 	}
 
-	os.Remove(MicrosoftBundleName)
-	if err := makeP7BFromCerts(certPaths, MicrosoftBundleName); err != nil {
-		return nil, err
-	}
-
-	hash, err := shaSumFile(MicrosoftBundleName)
+	p7Fingerprints, pemFingerprints, err := generateBundleFromCertificates(certPaths, MicrosoftBundleName)
 	if err != nil {
 		return nil, err
 	}
@@ -162,9 +157,12 @@ func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 	log.Printf("Microsoft CA bundle generated with %d certificates", len(certPaths))
 
 	return &VendorMetadata{
-		Date:     time.Now().UTC().Format("2006-01-02T15:04:05Z07:00"),
-		Key:      currentSHA,
-		SHA256:   hash,
+		Date: time.Now().UTC().Format("2006-01-02T15:04:05Z07:00"),
+		Key:  currentSHA,
+		Bundles: map[string]BundleFingerprint{
+			GoogleBundleName + ".p7b": *p7Fingerprints,
+			GoogleBundleName + ".pem": *pemFingerprints,
+		},
 		NumCerts: len(certPaths),
 	}, nil
 }

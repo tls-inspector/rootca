@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const MozillaBundleName = "mozilla_ca_bundle.p7b"
+const MozillaBundleName = "mozilla_ca_bundle"
 
 func buildMozillaBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 	latestSHA, err := getMozillaSHA()
@@ -19,7 +19,7 @@ func buildMozillaBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 	}
 
 	if metadata != nil {
-		if metadata.Key == latestSHA {
+		if isBundleUpToDate(latestSHA, metadata.Key, MozillaBundleName) {
 			log.Printf("Mozilla bundle is up-to-date")
 			return metadata, nil
 		}
@@ -61,11 +61,7 @@ func buildMozillaBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 		date = time.Now().UTC()
 	}
 
-	if err := makeP7BFromCerts(certPaths, MozillaBundleName); err != nil {
-		return nil, err
-	}
-
-	hash, err := shaSumFile(MozillaBundleName)
+	p7Fingerprints, pemFingerprints, err := generateBundleFromCertificates(certPaths, MozillaBundleName)
 	if err != nil {
 		return nil, err
 	}
@@ -73,8 +69,11 @@ func buildMozillaBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 	log.Printf("Mozilla CA bundle generated with %d certificates", len(certPaths))
 
 	return &VendorMetadata{
-		Key:      latestSHA,
-		SHA256:   hash,
+		Key: latestSHA,
+		Bundles: map[string]BundleFingerprint{
+			MozillaBundleName + ".p7b": *p7Fingerprints,
+			MozillaBundleName + ".pem": *pemFingerprints,
+		},
 		Date:     date.Format("2006-01-02T15:04:05Z07:00"),
 		NumCerts: len(pemCerts),
 	}, nil

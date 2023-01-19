@@ -8,7 +8,21 @@ import (
 	"strings"
 )
 
+func signBundle(bundleName string) error {
+	if err := signFile(bundleName + ".p7b"); err != nil {
+		return nil
+	}
+	if err := signFile(bundleName + ".pem"); err != nil {
+		return nil
+	}
+	return nil
+}
+
 func signFile(filePath string) error {
+	if _, err := os.Stat(filePath); err != nil {
+		return fmt.Errorf("signFile: %s", err.Error())
+	}
+
 	privKeyStr := os.Getenv("ROOTCA_SIGNING_PRIVATE_KEY")
 	if privKeyStr == "" {
 		return nil

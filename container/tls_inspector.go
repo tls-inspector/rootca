@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-const TLSInspectorBundleName = "tlsinspector_ca_bundle.p7b"
+const TLSInspectorBundleName = "tlsinspector_ca_bundle"
 
 func buildTLSInspectorBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 	const (
@@ -26,7 +26,7 @@ func buildTLSInspectorBundle(metadata *VendorMetadata) (*VendorMetadata, error) 
 	if err != nil {
 		return nil, err
 	}
-	if err := extractP7B(AppleBundleName, appleDir); err != nil {
+	if err := extractP7B(AppleBundleName+".p7b", appleDir); err != nil {
 		return nil, err
 	}
 	defer os.RemoveAll(appleDir)
@@ -39,7 +39,7 @@ func buildTLSInspectorBundle(metadata *VendorMetadata) (*VendorMetadata, error) 
 	if err != nil {
 		return nil, err
 	}
-	if err := extractP7B(GoogleBundleName, googleDir); err != nil {
+	if err := extractP7B(GoogleBundleName+".p7b", googleDir); err != nil {
 		return nil, err
 	}
 	defer os.RemoveAll(googleDir)
@@ -52,7 +52,7 @@ func buildTLSInspectorBundle(metadata *VendorMetadata) (*VendorMetadata, error) 
 	if err != nil {
 		return nil, err
 	}
-	if err := extractP7B(MicrosoftBundleName, microsoftDir); err != nil {
+	if err := extractP7B(MicrosoftBundleName+".p7b", microsoftDir); err != nil {
 		return nil, err
 	}
 	defer os.RemoveAll(microsoftDir)
@@ -65,7 +65,7 @@ func buildTLSInspectorBundle(metadata *VendorMetadata) (*VendorMetadata, error) 
 	if err != nil {
 		return nil, err
 	}
-	if err := extractP7B(MozillaBundleName, mozillaDir); err != nil {
+	if err := extractP7B(MozillaBundleName+".p7b", mozillaDir); err != nil {
 		return nil, err
 	}
 	defer os.RemoveAll(mozillaDir)
@@ -105,7 +105,7 @@ func buildTLSInspectorBundle(metadata *VendorMetadata) (*VendorMetadata, error) 
 
 	currentSHA := checksumCertShaList(shas)
 	if metadata != nil {
-		if metadata.Key == currentSHA {
+		if isBundleUpToDate(currentSHA, metadata.Key, TLSInspectorBundleName) {
 			log.Printf("TLSInspector bundle is up-to-date")
 			return metadata, nil
 		}
@@ -113,12 +113,7 @@ func buildTLSInspectorBundle(metadata *VendorMetadata) (*VendorMetadata, error) 
 	}
 	log.Printf("Building TLSInspector CA bundle")
 
-	os.Remove(TLSInspectorBundleName)
-	if err := makeP7BFromCerts(certPaths, TLSInspectorBundleName); err != nil {
-		return nil, err
-	}
-
-	hash, err := shaSumFile(TLSInspectorBundleName)
+	p7Fingerprints, pemFingerprints, err := generateBundleFromCertificates(certPaths, TLSInspectorBundleName)
 	if err != nil {
 		return nil, err
 	}
@@ -126,9 +121,12 @@ func buildTLSInspectorBundle(metadata *VendorMetadata) (*VendorMetadata, error) 
 	log.Printf("TLSInspector CA bundle generated with %d certificates", len(certPaths))
 
 	return &VendorMetadata{
-		Date:     time.Now().UTC().Format("2006-01-02T15:04:05Z07:00"),
-		Key:      currentSHA,
-		SHA256:   hash,
+		Date: time.Now().UTC().Format("2006-01-02T15:04:05Z07:00"),
+		Key:  currentSHA,
+		Bundles: map[string]BundleFingerprint{
+			TLSInspectorBundleName + ".p7b": *p7Fingerprints,
+			TLSInspectorBundleName + ".pem": *pemFingerprints,
+		},
 		NumCerts: len(certPaths),
 	}, nil
 }

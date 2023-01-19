@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-const GoogleBundleName = "google_ca_bundle.p7b"
+const GoogleBundleName = "google_ca_bundle"
 
 func buildGoogleBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 	latestSHA, lastModified, err := getLatestGoogleSHA()
@@ -18,7 +18,7 @@ func buildGoogleBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 	}
 
 	if metadata != nil {
-		if metadata.Key == latestSHA {
+		if isBundleUpToDate(latestSHA, metadata.Key, GoogleBundleName) {
 			log.Printf("Google bundle is up-to-date")
 			return metadata, nil
 		}
@@ -51,11 +51,7 @@ func buildGoogleBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 		}
 	}
 
-	if err := makeP7BFromCerts(certPaths, GoogleBundleName); err != nil {
-		return nil, err
-	}
-
-	hash, err := shaSumFile(GoogleBundleName)
+	p7Fingerprints, pemFingerprints, err := generateBundleFromCertificates(certPaths, GoogleBundleName)
 	if err != nil {
 		return nil, err
 	}
@@ -63,8 +59,11 @@ func buildGoogleBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 	log.Printf("Google CA bundle generated with %d certificates", len(certPaths))
 
 	return &VendorMetadata{
-		Key:      latestSHA,
-		SHA256:   hash,
+		Key: latestSHA,
+		Bundles: map[string]BundleFingerprint{
+			GoogleBundleName + ".p7b": *p7Fingerprints,
+			GoogleBundleName + ".pem": *pemFingerprints,
+		},
 		Date:     lastModified.Format("2006-01-02T15:04:05Z07:00"),
 		NumCerts: len(pemCerts),
 	}, nil

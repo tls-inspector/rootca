@@ -11,7 +11,7 @@ import (
 	"golang.org/x/net/html"
 )
 
-const AppleBundleName = "apple_ca_bundle.p7b"
+const AppleBundleName = "apple_ca_bundle"
 
 func buildAppleBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 	thumbprints, err := getAppleCertThumbprints()
@@ -25,7 +25,7 @@ func buildAppleBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 	}
 
 	if metadata != nil {
-		if metadata.Key == currentSHA {
+		if isBundleUpToDate(currentSHA, metadata.Key, AppleBundleName) {
 			log.Printf("Apple bundle is up-to-date")
 			return metadata, nil
 		}
@@ -38,8 +38,8 @@ func buildAppleBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 		panic(err)
 	}
 	defer os.RemoveAll(tmpDir)
-	if fileExists(AppleBundleName) {
-		if err := extractP7B(AppleBundleName, tmpDir); err != nil {
+	if fileExists(AppleBundleName + ".p7b") {
+		if err := extractP7B(AppleBundleName+".p7b", tmpDir); err != nil {
 			return nil, fmt.Errorf("error extracting apple certificates: %s", err.Error())
 		}
 	}
@@ -87,12 +87,7 @@ func buildAppleBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 		}
 	}
 
-	os.Remove(AppleBundleName)
-	if err := makeP7BFromCerts(certPaths, AppleBundleName); err != nil {
-		return nil, err
-	}
-
-	hash, err := shaSumFile(AppleBundleName)
+	p7Fingerprints, pemFingerprints, err := generateBundleFromCertificates(certPaths, AppleBundleName)
 	if err != nil {
 		return nil, err
 	}
@@ -100,9 +95,12 @@ func buildAppleBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 	log.Printf("Apple CA bundle generated with %d certificates", len(certPaths))
 
 	return &VendorMetadata{
-		Date:     time.Now().UTC().Format("2006-01-02T15:04:05Z07:00"),
-		Key:      currentSHA,
-		SHA256:   hash,
+		Date: time.Now().UTC().Format("2006-01-02T15:04:05Z07:00"),
+		Key:  currentSHA,
+		Bundles: map[string]BundleFingerprint{
+			AppleBundleName + ".p7b": *p7Fingerprints,
+			AppleBundleName + ".pem": *pemFingerprints,
+		},
 		NumCerts: len(certPaths),
 	}, nil
 }

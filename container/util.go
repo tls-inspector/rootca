@@ -3,7 +3,9 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"crypto/sha1"
 	"crypto/sha256"
+	"crypto/sha512"
 	"crypto/x509"
 	"encoding/hex"
 	"encoding/pem"
@@ -59,31 +61,80 @@ func httpGet(url string) (io.ReadCloser, error) {
 	return resp.Body, nil
 }
 
-func makeP7BFromCerts(certPaths []string, p7bPath string) error {
+// generateBundleFromCertificates will generate a PKCS#7 and PEM bundle from the given slice of PEM certificate files
+// returns the fingerprints of the PKCS#7 file, the PEM file, or an error
+func generateBundleFromCertificates(pemPaths []string, bundleName string) (*BundleFingerprint, *BundleFingerprint, error) {
+	// Sort the certificates by their hash
+	certFingerprintsToPath := map[string]string{}
+	certFingerprints := make([]string, len(pemPaths))
+	for i, pemPath := range pemPaths {
+		pemData, err := os.ReadFile(pemPath)
+		if err != nil {
+			return nil, nil, fmt.Errorf("pem: %s", err.Error())
+		}
+
+		fingerprint, err := getCertPemSHA(pemData)
+		if err != nil {
+			return nil, nil, fmt.Errorf("pem: %s", err.Error())
+		}
+		certFingerprintsToPath[fingerprint] = pemPath
+		certFingerprints[i] = fingerprint
+	}
+	sort.Slice(certFingerprints, func(i, j int) bool {
+		return certFingerprints[i] > certFingerprints[j]
+	})
+	for i, fingerprint := range certFingerprints {
+		pemPaths[i] = certFingerprintsToPath[fingerprint]
+	}
+
 	args := []string{
 		"crl2pkcs7",
 		"-nocrl",
 	}
 
-	if len(certPaths) == 0 {
-		return fmt.Errorf("no certificates to add to bundle")
+	if len(pemPaths) == 0 {
+		return nil, nil, fmt.Errorf("no certificates to add to bundle")
 	}
 
-	for _, certPath := range certPaths {
+	for _, certPath := range pemPaths {
 		args = append(args, "-certfile")
 		args = append(args, certPath)
 	}
 
 	args = append(args, "-out")
-	args = append(args, p7bPath)
+	args = append(args, bundleName+".p7b")
 
+	os.Remove(bundleName + ".p7b")
 	cmd := exec.Command("openssl", args...)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("openssl error: %s", output)
+		return nil, nil, fmt.Errorf("openssl error: %s", output)
 	}
 
-	return nil
+	os.Remove(bundleName + ".pem")
+	f, err := os.OpenFile(bundleName+".pem", os.O_CREATE|os.O_RDWR, 0644)
+	if err != nil {
+		return nil, nil, fmt.Errorf("pem: %s", err.Error())
+	}
+	defer f.Close()
+	for _, pemPath := range pemPaths {
+		pemData, err := os.ReadFile(pemPath)
+		if err != nil {
+			return nil, nil, fmt.Errorf("pem: %s", err.Error())
+		}
+		f.Write(pemData)
+	}
+
+	p7Fingerprints, err := getFileFingerprints(bundleName + ".p7b")
+	if err != nil {
+		return nil, nil, fmt.Errorf("checksum: %s", err.Error())
+	}
+	pemFingerprints, err := getFileFingerprints(bundleName + ".pem")
+	if err != nil {
+		return nil, nil, fmt.Errorf("checksum: %s", err.Error())
+	}
+
+	return p7Fingerprints, pemFingerprints, nil
 }
 
 func writeTemp(data []byte) (string, error) {
@@ -160,16 +211,15 @@ func convertDerToPem(derPath, pemPath string) (string, error) {
 	return fmt.Sprintf("%X", h.Sum(nil)), os.WriteFile(pemPath, pemData, 0644)
 }
 
-func shaSumFile(filePath string) (string, error) {
-	f, err := os.OpenFile(filePath, os.O_RDONLY, 0644)
+func getFileFingerprints(filePath string) (*BundleFingerprint, error) {
+	d, err := os.ReadFile(filePath)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	h := sha256.New()
-	if _, err := io.Copy(h, f); err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("%X", h.Sum(nil)), nil
+	s1 := fmt.Sprintf("%X", sha1.Sum(d))
+	s256 := fmt.Sprintf("%X", sha256.Sum256(d))
+	s512 := fmt.Sprintf("%X", sha512.Sum512(d))
+	return &BundleFingerprint{s1, s256, s512}, nil
 }
 
 func extractPemCerts(data []byte) [][]byte {
@@ -244,4 +294,19 @@ func extractP7B(bundlePath, outputDir string) error {
 		os.WriteFile(fileName, pemCert, 0644)
 	}
 	return nil
+}
+
+func isBundleUpToDate(inKey, expectedKey string, bundleName string) bool {
+	if inKey != expectedKey {
+		return false
+	}
+
+	if _, err := os.Stat(bundleName + ".p7b"); err != nil {
+		return false
+	}
+	if _, err := os.Stat(bundleName + ".pem"); err != nil {
+		return false
+	}
+
+	return true
 }

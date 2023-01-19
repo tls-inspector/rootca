@@ -13,6 +13,6 @@ ENV ROOTCA_SIGNING_PUBLIC_KEY=""
 ADD rootca /
 RUN chmod +x /rootca
 VOLUME /github/workspace
-WORKDIR /github/workspace
+WORKDIR /github/workspace/bundles
 
 ENTRYPOINT [ "/rootca" ]

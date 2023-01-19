@@ -61,23 +61,23 @@ func ExportReport() error {
 		return reportCertificates, nil
 	}
 
-	appleCertificates, err := certificatesFromP7("Apple", AppleBundleName)
+	appleCertificates, err := certificatesFromP7("Apple", AppleBundleName+".p7b")
 	if err != nil {
 		return fmt.Errorf("apple: %s", err.Error())
 	}
-	googleCertificates, err := certificatesFromP7("Google", GoogleBundleName)
+	googleCertificates, err := certificatesFromP7("Google", GoogleBundleName+".p7b")
 	if err != nil {
 		return fmt.Errorf("google: %s", err.Error())
 	}
-	microsoftCertificates, err := certificatesFromP7("Microsoft", MicrosoftBundleName)
+	microsoftCertificates, err := certificatesFromP7("Microsoft", MicrosoftBundleName+".p7b")
 	if err != nil {
 		return fmt.Errorf("microsoft: %s", err.Error())
 	}
-	mozillaCertificates, err := certificatesFromP7("Mozilla", MozillaBundleName)
+	mozillaCertificates, err := certificatesFromP7("Mozilla", MozillaBundleName+".p7b")
 	if err != nil {
 		return fmt.Errorf("mozilla: %s", err.Error())
 	}
-	tlsinspectorCertificates, err := certificatesFromP7("TLSInspector", TLSInspectorBundleName)
+	tlsinspectorCertificates, err := certificatesFromP7("TLSInspector", TLSInspectorBundleName+".p7b")
 	if err != nil {
 		return fmt.Errorf("tlsinspector: %s", err.Error())
 	}
