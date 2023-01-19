@@ -64,6 +64,12 @@ To generate the Mozilla bundle, a precompiled list of certificates is downloaded
 [curl website](https://curl.se/docs/caextract.html). The certificates are extracted and then combined into a PKCS#7
 archive.
 
+### TLS Inspector
+
+The TLS Inspector bundle is a collection of certificates that are present in every vendor bundle. Vendors may choose to
+trust or not trust specific certificates at their own discretion, for example Apple trusts their own root CA whereas no
+other vendors do.
+
 ## License
 
 The software that compose this repository, excluding the certificate stores and certificate data, are released under the

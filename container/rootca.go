@@ -22,6 +22,7 @@ func main() {
 	var microsoftMetadata *VendorMetadata
 	var googleMetadata *VendorMetadata
 	var appleMetadata *VendorMetadata
+	var tlsinspectorMetadata *VendorMetadata
 
 	wg := &sync.WaitGroup{}
 	wg.Add(4)
@@ -100,11 +101,25 @@ func main() {
 
 	wg.Wait()
 
+	// Build TLS Inspector bundle after all others
+	if metadata != nil {
+		tlsinspectorMetadata = &metadata.TLSInspector
+	}
+	newTLSInspectorMetadata, err := buildTLSInspectorBundle(tlsinspectorMetadata)
+	if err != nil {
+		log.Fatalf("Error updating tlsinspector bundle: %s", err.Error())
+	}
+	if err := signFile(TLSInspectorBundleName); err != nil {
+		log.Fatalf("Error signing tlsinspector bundle: %s", err.Error())
+	}
+	tlsinspectorMetadata = newTLSInspectorMetadata
+
 	newMetadata := BundleMetadata{
-		Mozilla:   *mozillaMetadata,
-		Microsoft: *microsoftMetadata,
-		Google:    *googleMetadata,
-		Apple:     *appleMetadata,
+		Apple:        *appleMetadata,
+		Google:       *googleMetadata,
+		Microsoft:    *microsoftMetadata,
+		Mozilla:      *mozillaMetadata,
+		TLSInspector: *tlsinspectorMetadata,
 	}
 
 	if err := writeMetadata(newMetadata); err != nil {

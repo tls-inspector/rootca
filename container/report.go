@@ -77,6 +77,10 @@ func ExportReport() error {
 	if err != nil {
 		return fmt.Errorf("mozilla: %s", err.Error())
 	}
+	tlsinspectorCertificates, err := certificatesFromP7("TLSInspector", TLSInspectorBundleName)
+	if err != nil {
+		return fmt.Errorf("tlsinspector: %s", err.Error())
+	}
 
 	os.Remove("certificates.csv")
 	f, err := os.OpenFile("certificates.csv", os.O_CREATE|os.O_RDWR, 0644)
@@ -90,7 +94,7 @@ func ExportReport() error {
 		return err
 	}
 
-	for _, certs := range [][]tReportCertificate{appleCertificates, googleCertificates, microsoftCertificates, mozillaCertificates} {
+	for _, certs := range [][]tReportCertificate{appleCertificates, googleCertificates, microsoftCertificates, mozillaCertificates, tlsinspectorCertificates} {
 		for _, cert := range certs {
 			err = csv.Write([]string{
 				cert.Vendor,

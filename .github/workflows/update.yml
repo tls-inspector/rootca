@@ -48,13 +48,15 @@ jobs:
           files: |
             bundle_metadata.json
             bundle_metadata.json.sig
-            mozilla_ca_bundle.p7b
-            mozilla_ca_bundle.p7b.sig
-            microsoft_ca_bundle.p7b
-            microsoft_ca_bundle.p7b.sig
-            google_ca_bundle.p7b
-            google_ca_bundle.p7b.sig
             apple_ca_bundle.p7b
             apple_ca_bundle.p7b.sig
+            google_ca_bundle.p7b
+            google_ca_bundle.p7b.sig
+            microsoft_ca_bundle.p7b
+            microsoft_ca_bundle.p7b.sig
+            mozilla_ca_bundle.p7b
+            mozilla_ca_bundle.p7b.sig
+            tlsinspector_ca_bundle.p7b
+            tlsinspector_ca_bundle.p7b.sig
             signing_key.pem
             certificates.csv

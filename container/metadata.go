@@ -8,10 +8,11 @@ import (
 const BundleMetadataName = "bundle_metadata.json"
 
 type BundleMetadata struct {
-	Mozilla   VendorMetadata `json:"mozilla"`
-	Microsoft VendorMetadata `json:"microsoft"`
-	Google    VendorMetadata `json:"google"`
-	Apple     VendorMetadata `json:"apple"`
+	Mozilla      VendorMetadata `json:"mozilla"`
+	Microsoft    VendorMetadata `json:"microsoft"`
+	Google       VendorMetadata `json:"google"`
+	Apple        VendorMetadata `json:"apple"`
+	TLSInspector VendorMetadata `json:"tls_inspector"`
 }
 
 type VendorMetadata struct {
