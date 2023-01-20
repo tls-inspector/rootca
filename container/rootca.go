@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 	"sync"
 	"time"
 )
@@ -12,6 +13,12 @@ func main() {
 	start := time.Now()
 
 	log.Printf("rootca version %s\n", Version)
+
+	if info, _ := os.Stat("bundles"); info.IsDir() {
+		os.Chdir("bundles")
+		wd, _ := os.Getwd()
+		log.Printf("working in directory %s", wd)
+	}
 
 	metadata, err := readMetadata()
 	if err != nil {
