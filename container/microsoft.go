@@ -160,8 +160,8 @@ func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 		Date: time.Now().UTC().Format("2006-01-02T15:04:05Z07:00"),
 		Key:  currentSHA,
 		Bundles: map[string]BundleFingerprint{
-			GoogleBundleName + ".p7b": *p7Fingerprints,
-			GoogleBundleName + ".pem": *pemFingerprints,
+			MicrosoftBundleName + ".p7b": *p7Fingerprints,
+			MicrosoftBundleName + ".pem": *pemFingerprints,
 		},
 		NumCerts: len(certPaths),
 	}, nil
