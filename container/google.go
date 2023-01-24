@@ -17,7 +17,7 @@ func buildGoogleBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 		return nil, err
 	}
 
-	if metadata != nil {
+	if metadata != nil && !forceUpdate {
 		if isBundleUpToDate(latestSHA, metadata.Key, GoogleBundleName) {
 			log.Printf("Google bundle is up-to-date")
 			return metadata, nil

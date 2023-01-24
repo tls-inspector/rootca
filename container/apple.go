@@ -24,7 +24,7 @@ func buildAppleBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 		thumbprintMap[thumbprint] = true
 	}
 
-	if metadata != nil {
+	if metadata != nil && !forceUpdate {
 		if isBundleUpToDate(currentSHA, metadata.Key, AppleBundleName) {
 			log.Printf("Apple bundle is up-to-date")
 			return metadata, nil

@@ -8,6 +8,7 @@ import (
 )
 
 var Version = "undefined"
+var forceUpdate = false
 
 func main() {
 	start := time.Now()
@@ -18,6 +19,11 @@ func main() {
 		os.Chdir("bundles")
 		wd, _ := os.Getwd()
 		log.Printf("working in directory %s", wd)
+	}
+
+	if _, err := os.Stat(".force_update"); err == nil {
+		forceUpdate = true
+		os.Remove(".force_update")
 	}
 
 	metadata, err := readMetadata()

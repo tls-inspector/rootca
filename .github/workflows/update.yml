@@ -1,4 +1,4 @@
-name: "Update CA Bundle"
+name: "Update CA Bundles"
 
 on:
   push:
@@ -13,7 +13,8 @@ permissions:
   contents: write
 
 jobs:
-  container:
+  update:
+    name: "Update"
     runs-on: ubuntu-latest
     steps:
       - name: Generate Tag Name
@@ -22,8 +23,8 @@ jobs:
       - name: Checkout Source
         id: checkout
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # pin@v3.3.0
-      - name: Update CA Bundle
-        id: update_bundle
+      - name: Update CA Bundles
+        id: update_bundles
         uses: docker://ghcr.io/tls-inspector/rootca:latest
         env:
           ROOTCA_SIGNING_PRIVATE_KEY: ${{ secrets.ROOTCA_SIGNING_PRIVATE_KEY }}
@@ -35,9 +36,9 @@ jobs:
           commit_user_name: Ian Spence
           commit_user_email: ian@ecnepsnai.com
           commit_author: Ian Spence <ian@ecnepsnai.com>
-          commit_message: Update CA Bundle
+          commit_message: "[Actions] Update CA Bundles"
           tagging_message: "${{ env.TAG_NAME}}"
-      - name: Make Release
+      - name: Make Release If Needed
         id: release
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # pin@v1
         if: steps.commit.outputs.changes_detected == 'true'
@@ -45,6 +46,7 @@ jobs:
           name: CA Bundle ${{ github.event.repository.updated_at}}
           target_commitish: ${{ steps.commit.commit_hash }}
           tag_name: "${{ env.TAG_NAME}}"
+          body: Automatic CA bundle update
           files: |
             bundles/bundle_metadata.json
             bundles/bundle_metadata.json.sig

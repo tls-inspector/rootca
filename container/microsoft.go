@@ -79,7 +79,7 @@ func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 	}
 
 	currentSHA := checksumCertShaList(thumbprintSlice)
-	if metadata != nil {
+	if metadata != nil && !forceUpdate {
 		if isBundleUpToDate(currentSHA, metadata.Key, MicrosoftBundleName) {
 			log.Printf("Microsoft bundle is up-to-date")
 			return metadata, nil

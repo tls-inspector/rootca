@@ -104,7 +104,7 @@ func buildTLSInspectorBundle(metadata *VendorMetadata) (*VendorMetadata, error) 
 	}
 
 	currentSHA := checksumCertShaList(shas)
-	if metadata != nil {
+	if metadata != nil && !forceUpdate {
 		if isBundleUpToDate(currentSHA, metadata.Key, TLSInspectorBundleName) {
 			log.Printf("TLSInspector bundle is up-to-date")
 			return metadata, nil
