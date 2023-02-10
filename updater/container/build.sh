@@ -5,7 +5,10 @@ VERSION=${1:?Version required}
 REVISION=$(git rev-parse HEAD)
 DATETIME=$(date --rfc-3339=seconds)
 
-CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v2 go build -ldflags="-s -w -X 'main.Version=${VERSION}'" -trimpath -buildmode=exe
+cd ../
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v2 go build -ldflags="-s -w -X 'main.Version=${VERSION}'" -trimpath -buildmode=exe -o rootca
+cd container
+mv ../rootca .
 
 podman build \
     --squash \
@@ -16,5 +19,6 @@ podman build \
     -t ghcr.io/tls-inspector/rootca:${VERSION} \
     -t ghcr.io/tls-inspector/rootca:latest \
     .
+rm rootca
 podman push ghcr.io/tls-inspector/rootca:${VERSION}
 podman push ghcr.io/tls-inspector/rootca:latest

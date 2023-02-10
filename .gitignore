@@ -1,5 +1,5 @@
-container/rootca
-*.plist
+updater/rootca
+updater/container/rootca
 *.json
 *.sig
 *.p7b

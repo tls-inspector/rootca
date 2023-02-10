@@ -157,7 +157,7 @@ func validateWorkdir() {
 	if err != nil && !os.IsNotExist(err) {
 		log.Fatalf("Error validating workdir '%s': %s", workdir, err.Error())
 	}
-	if !info.IsDir() {
+	if info != nil && !info.IsDir() {
 		log.Fatalf("Workdir is not a directory %s", workdir)
 	}
 	if os.IsNotExist(err) {

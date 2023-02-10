@@ -4,73 +4,72 @@ This repository provides a PKCS#7 archive of Root CA Certificate Stores from App
 The latest release of this repo always contains the most recent store, and is updated automatically whenever any changes
 are made.
 
-This is provided for the TLS Inspector iOS application, but can be used by anybody within the terms of the license.
+This is provided for the TLS Inspector iOS application, but can be used by anybody within the terms of the license. The
+repository is entirely self-contained and can be self-hosted or modified.
 
 ## About
 
-This repository contains the following components: A container image to build the certificate bundle, a github workflow
-to check for and perform updates, the actual certificate bundles itself, and metadata files.
+This repository contains the following components: An update utility that builds the certificate bundles, a container
+and github workflow using that utility to check for and perform updates, and the actual certificate bundles and metadata.
 
-The certificate bundles are packaged as PKCS#7 archives, with the certificates included in the Certificate/CRL section.
-The bundles do not utilize PKCS#7 signatures or encryption.
+The certificate bundles are packaged as PKCS#7 archives with the certificates included in the Certificate/CRL section,
+and a text file with the PEM-encoded certificates.
 
-The primary metadata file contains the modified date of the bundle, a SHA256 sum of the bundle file, and the number of
-certificates included. The `key` property is internal to the container and should be ignored by consumers of the
+The primary metadata file contains the modified date of the bundle, a checksums of the bundle files, and the number of
+certificates included. The key property is internal to the container and should be ignored by consumers of the
 bundles. Additionally, a comma-separated-value list of all certificates included in the bundles is provided for
 reference, but should not be programmatically relied upon.
 
-### Container
+For information on the update utility, see updater/README.md.
 
-A OCI container image is included in this repository that executes a golang application to build and update the
-certificate bundles.
+### Verification
 
-Any changes to the certificates are committed and included in a new release.
+Bundles & Metadata are signed by a ECDSA-P256 key and have an accompaning signature file.
+The sining public key is included in the repo and in each release.
 
-The bundles and metadata file are signed with an ECDSA-P256 key. The public key is included in the repository and
-release. The files can be verified using OpenSSL:
+You can verify the signature of the files using OpenSSL (using `bundle_metadata.json` as an example):
 
+```bash
+openssl dgst -sha256 -verify signing_key.pem -signature bundle_metadata.json.sig bundle_metadata.json
 ```
-openssl dgst -sha256 -verify signing_key.pem -signature bundle_metadata.json.sig bundle_metadata.json.sig
-```
 
-The repository is entirely self-contained and can be self-hosted or modified.
+## Bundles
 
 ### Apple
 
-To generate the Apple bundle, a precompiled list of certificates is downloaded from the
-[Apple Support website](https://support.apple.com/en-ca/HT213464). The certificates are downloaded directly from crt.sh
-and then combined into a PKCS#7 archive.
+To generate the Apple bundle, a precompiled list of certificates is downloaded from the [Apple Support website](https://support.apple.com/en-ca/HT213464)
+. The certificates are downloaded directly from crt.sh.
 
 ### Google
 
-To generate the Google bundle, a precompiles list of certificates is downloaded from the
-[Chromium source mirror on Github](https://github.com/chromium/chromium/blob/main/net/data/ssl/chrome_root_store/root_store.certs).
-The certificates are extracted and then combined into a PKCS#7 archive.
+The Google bundle is based on the [Chromium source code](https://github.com/chromium/chromium/blob/main/net/data/ssl/chrome_root_store/root_store.certs)
+, which contains certificates participating in the [Chrome Root Program](https://g.co/chrome/root-policy).
 
 ### Microsoft
 
-To generate the Microsoft bundle, a precompiled CSV of certificates included with Windows is downloaded from the
-[ccadb website](https://ccadb-public.secure.force.com/microsoft/IncludedCACertificateReportForMSFTCSV). The CSV file
-includes certificates that are disabled, expired, and also for purposes other than server verification. We filter these
-certificates out.
-
-Certificates are then downloaded directly from Windows Update and verified for integrity.
-
-The certificates are extracted and then combined into a PKCS#7 archive.
+The Microsoft bundle is based on [Microsoft Trusted Root program](https://learn.microsoft.com/en-us/security/trusted-root/participants-list)
+, utilizing [Windows Subject Trust Lists](https://github.com/tls-inspector/rootca) downloaded directly from Windows
+Update. Only certificates that are trusted, valid for Server Authentication, and not expired are included.
 
 ### Mozilla
 
-To generate the Mozilla bundle, a precompiled list of certificates is downloaded from the
-[curl website](https://curl.se/docs/caextract.html). The certificates are extracted and then combined into a PKCS#7
-archive.
+To generate the Mozilla bundle, a prepared list of certificates extracted from Firefox is downloaded from the [curl website](https://curl.se/docs/caextract.html).
 
 ### TLS Inspector
 
-The TLS Inspector bundle is a collection of certificates that are present in every vendor bundle. Vendors may choose to
-trust or not trust specific certificates at their own discretion, for example Apple trusts their own root CA whereas no
-other vendors do.
+The TLS Inspector bundle is a collection of certificate that are trusted equally by all other vendors. For example, a
+certificate that Microsoft trusts that Google does not is not included in this bundle.
 
 ## License
 
 The software that compose this repository, excluding the certificate stores and certificate data, are released under the
 terms of the Mozilla Public License 2.0.
+
+*Apple*, *Google*, *Chromium*, *Chrome*, *Microsoft*, *Windows*, *Mozilla*, and *Firefox* are all registered trademarks
+belonging to their respective owners. This package is not affiliated with or endorsed by any third party, including but
+not limited to the afformentioned entities.
+
+The export/import and/or use of strong cryptography software, providing cryptography hooks, or even just communicating
+technical details about cryptography software is illegal in some parts of the world. You are responsible for knowing and
+adhering to the laws and requirements of your locality. The authors of this software are not liable for any violations
+you make by using this software.
