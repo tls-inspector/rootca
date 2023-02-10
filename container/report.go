@@ -26,7 +26,7 @@ func ExportReport() error {
 	}
 
 	certificatesFromP7 := func(vendor, p7File string) ([]tReportCertificate, error) {
-		output, err := exec.Command("openssl", "pkcs7", "-in", p7File, "-print_certs").CombinedOutput()
+		output, err := exec.Command(opensslPath, "pkcs7", "-in", p7File, "-print_certs").CombinedOutput()
 		if err != nil {
 			return nil, err
 		}

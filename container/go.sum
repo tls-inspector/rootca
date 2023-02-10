@@ -1,2 +1,4 @@
+github.com/tls-inspector/authrootstl v1.0.1 h1:VGKiebbONIfRw2ZnkMexRyUrbtwQSoJ98kLcOV/tgWI=
+github.com/tls-inspector/authrootstl v1.0.1/go.mod h1:pvll+R1BVUTxDNBkE6+L+UG5xnQ0e3SIn28J1nR0Rko=
 golang.org/x/net v0.5.0 h1:GyT4nK/YDHSqa1c4753ouYCDajOYKTja9Xb/OHtgvSw=
 golang.org/x/net v0.5.0/go.mod h1:DivGGAXEgPSlEBzxGzZI+ZLohi+xUj054jfeKui00ws=

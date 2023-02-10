@@ -105,7 +105,7 @@ func generateBundleFromCertificates(pemPaths []string, bundleName string) (*Bund
 	args = append(args, bundleName+".p7b")
 
 	os.Remove(bundleName + ".p7b")
-	cmd := exec.Command("openssl", args...)
+	cmd := exec.Command(opensslPath, args...)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return nil, nil, fmt.Errorf("openssl error: %s", output)
@@ -279,7 +279,7 @@ func checksumCertShaList(thumbprints []string) string {
 // extractP7B will extract the given PKCS#7 bundle and save all certificates in PEM format with the filename
 // <SHA-256>.crt
 func extractP7B(bundlePath, outputDir string) error {
-	output, err := exec.Command("openssl", "pkcs7", "-in", bundlePath, "-print_certs").CombinedOutput()
+	output, err := exec.Command(opensslPath, "pkcs7", "-in", bundlePath, "-print_certs").CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("error extracting certs: %s", err.Error())
 	}
@@ -309,4 +309,13 @@ func isBundleUpToDate(inKey, expectedKey string, bundleName string) bool {
 	}
 
 	return true
+}
+
+func sliceContains[T string](haystack []T, needle T) bool {
+	for _, c := range haystack {
+		if c == needle {
+			return true
+		}
+	}
+	return false
 }

@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"strings"
 )
 
 func signBundle(bundleName string) error {
@@ -23,23 +22,15 @@ func signFile(filePath string) error {
 		return fmt.Errorf("signFile: %s", err.Error())
 	}
 
-	privKeyStr := os.Getenv("ROOTCA_SIGNING_PRIVATE_KEY")
-	if privKeyStr == "" {
+	if publicKeyBytes == nil || privateKeyBytes == nil {
 		return nil
 	}
-	privKeyStr = strings.ReplaceAll(privKeyStr, "\\n", "\n")
 
-	pubKeyStr := os.Getenv("ROOTCA_SIGNING_PUBLIC_KEY")
-	if pubKeyStr == "" {
-		return nil
-	}
-	pubKeyStr = strings.ReplaceAll(pubKeyStr, "\\n", "\n")
-
-	privKeyPath, err := writeTemp([]byte(privKeyStr))
+	privKeyPath, err := writeTemp(privateKeyBytes)
 	if err != nil {
 		return err
 	}
-	pubKeyPath, err := writeTemp([]byte(pubKeyStr))
+	pubKeyPath, err := writeTemp(publicKeyBytes)
 	if err != nil {
 		return err
 	}
@@ -65,7 +56,7 @@ func signFile(filePath string) error {
 		filePath,
 	}
 
-	cmd := exec.Command("openssl", signArgs...)
+	cmd := exec.Command(opensslPath, signArgs...)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("openssl error: %s", output)
@@ -90,7 +81,7 @@ func verifyFileSignature(filePath, signaturePath, pubKeyPath string) error {
 		signaturePath,
 		filePath,
 	}
-	output, err := exec.Command("openssl", verifyArgs...).CombinedOutput()
+	output, err := exec.Command(opensslPath, verifyArgs...).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("%s", output)
 	}

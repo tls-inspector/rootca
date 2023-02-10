@@ -3,23 +3,21 @@ package main
 import (
 	"log"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 )
 
 var Version = "undefined"
-var forceUpdate = false
 
 func main() {
+	parseArgs()
+
 	start := time.Now()
 
 	log.Printf("rootca version %s\n", Version)
 
-	if info, _ := os.Stat("bundles"); info.IsDir() {
-		os.Chdir("bundles")
-		wd, _ := os.Getwd()
-		log.Printf("working in directory %s", wd)
-	}
+	validateWorkdir()
 
 	if _, err := os.Stat(".force_update"); err == nil {
 		forceUpdate = true
@@ -148,4 +146,36 @@ func main() {
 	}
 
 	log.Printf("Finished in %s\n", time.Since(start).String())
+}
+
+func validateWorkdir() {
+	if workdir == "." {
+		return
+	}
+
+	info, err := os.Stat(workdir)
+	if err != nil && !os.IsNotExist(err) {
+		log.Fatalf("Error validating workdir '%s': %s", workdir, err.Error())
+	}
+	if !info.IsDir() {
+		log.Fatalf("Workdir is not a directory %s", workdir)
+	}
+	if os.IsNotExist(err) {
+		if err := os.Mkdir(workdir, 7644); err != nil {
+			log.Fatalf("Error creating workdir '%s': %s", workdir, err.Error())
+		}
+	}
+	if err := os.Chdir(workdir); err != nil {
+		log.Fatalf("Error moving into workdir '%s': %s", workdir, err.Error())
+	}
+
+	wd, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+	wd, err = filepath.Abs(wd)
+	if err != nil {
+		panic(err)
+	}
+	log.Printf("Working in directory %s", wd)
 }
