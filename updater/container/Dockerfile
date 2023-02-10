@@ -5,7 +5,7 @@ LABEL org.opencontainers.image.source=https://github.com/tls-inspector/rootca
 LABEL org.opencontainers.image.title="rootca"
 LABEL org.opencontainers.image.description="Root CA Certificate Bundles"
 
-RUN apk add --no-cache openssl cabextract
+RUN apk add --no-cache openssl cabextract tar
 
 ENV ROOTCA_SIGNING_PRIVATE_KEY=""
 ENV ROOTCA_SIGNING_PUBLIC_KEY=""

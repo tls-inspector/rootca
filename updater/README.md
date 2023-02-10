@@ -3,6 +3,7 @@ The rootca update tool is a golang application that can be used to maintain a di
 ### Requirements
  - OpenSSL 3.x
  - cabextract
+ - tar
 
 ### Usage
 

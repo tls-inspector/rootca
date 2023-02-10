@@ -1,90 +1,68 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"path"
 	"strings"
 	"time"
-
-	"golang.org/x/net/html"
 )
 
 const AppleBundleName = "apple_ca_bundle"
 
 func buildAppleBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
-	thumbprints, err := getAppleCertThumbprints()
+	latestSHA, lastModified, tarballURL, err := getLatestAppleSHA()
 	if err != nil {
 		return nil, err
-	}
-	currentSHA := checksumCertShaList(thumbprints)
-	thumbprintMap := map[string]bool{}
-	for _, thumbprint := range thumbprints {
-		thumbprintMap[thumbprint] = true
 	}
 
 	if metadata != nil && !forceUpdate {
-		if isBundleUpToDate(currentSHA, metadata.Key, AppleBundleName) {
+		if isBundleUpToDate(latestSHA, metadata.Key, AppleBundleName) {
 			log.Printf("Apple bundle is up-to-date")
 			return metadata, nil
 		}
-		log.Printf("Detected changes to Apple bundle. LastSHA='%s' LatestSHA='%s'", metadata.Key, currentSHA)
+		log.Printf("Detected changes to Apple bundle. LastSHA='%s' LatestSHA='%s'", metadata.Key, latestSHA)
 	}
 	log.Printf("Building Apple CA bundle")
 
-	tmpDir, err := os.MkdirTemp("", "apple")
-	if err != nil {
-		panic(err)
-	}
-	defer os.RemoveAll(tmpDir)
-	if fileExists(AppleBundleName + ".p7b") {
-		if err := extractP7B(AppleBundleName+".p7b", tmpDir); err != nil {
-			return nil, fmt.Errorf("error extracting apple certificates: %s", err.Error())
-		}
-	}
-
-	certPaths := make([]string, len(thumbprints))
-	for i, thumbprint := range thumbprints {
-		certPath := path.Join(tmpDir, thumbprint+".crt")
-
-		if fileExists(certPath) {
-			if !verifyCertPEMSHA(certPath, thumbprint) {
-				log.Printf("Cached Apple certificate %s.crt is bad", thumbprint)
-				os.Remove(certPath)
-			} else {
-				// Cached cert is good
-				certPaths[i] = certPath
-				continue
-			}
-		}
-
-		if err := downloadFile("https://crt.sh/?d="+thumbprint, certPath); err != nil {
-			return nil, err
-		}
-		if !verifyCertPEMSHA(certPath, thumbprint) {
-			return nil, fmt.Errorf("downloaded certificate verification failed")
-		}
-		log.Printf("Downloaded new certificate for Apple bundle %s", thumbprint)
-		certPaths[i] = certPath
-		time.Sleep(1500 * time.Millisecond)
-	}
-
-	certFiles, err := os.ReadDir(tmpDir)
+	tempDir, err := os.MkdirTemp("", "apple")
 	if err != nil {
 		return nil, err
 	}
-	for _, certFile := range certFiles {
-		sha := strings.ToUpper(certFile.Name())
-		if len(sha) != 68 {
+	defer os.RemoveAll(tempDir)
+
+	tarballPath := path.Join(tempDir, "apple.tar.gz")
+	if err := downloadFile(tarballURL, tarballPath); err != nil {
+		return nil, fmt.Errorf("error downloading archive: %s", err.Error())
+	}
+
+	exCmd := exec.Command("tar", "-xzf", tarballPath, "--strip", "1")
+	exCmd.Dir = tempDir
+	if err := exCmd.Run(); err != nil {
+		return nil, fmt.Errorf("error extracting archive: %s", err.Error())
+	}
+
+	outputDir := path.Join(tempDir, "bundle")
+	os.Mkdir(outputDir, os.ModePerm)
+	certificateDir := path.Join(tempDir, "certificates", "roots")
+	items, err := os.ReadDir(certificateDir)
+	if err != nil {
+		return nil, fmt.Errorf("error reading certificate directory: %s", err.Error())
+	}
+	certPaths := []string{}
+	for i, item := range items {
+		if !strings.HasSuffix(item.Name(), ".cer") && !strings.HasSuffix(item.Name(), ".der") && !strings.HasSuffix(item.Name(), ".crt") {
 			continue
 		}
-		sha = sha[0 : len(sha)-4]
-
-		if !thumbprintMap[sha] {
-			os.Remove(path.Join(tmpDir, certFile.Name()))
-			log.Printf("Removed unused Apple certificate %s", certFile.Name())
+		certPath := path.Join(outputDir, fmt.Sprintf("cert_%d.crt", i))
+		_, err := convertDerToPem(path.Join(certificateDir, item.Name()), certPath)
+		if err != nil {
+			return nil, fmt.Errorf("error converting certificate: %s", err.Error())
 		}
+		certPaths = append(certPaths, certPath)
 	}
 
 	p7Fingerprints, pemFingerprints, err := generateBundleFromCertificates(certPaths, AppleBundleName)
@@ -95,59 +73,54 @@ func buildAppleBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 	log.Printf("Apple CA bundle generated with %d certificates", len(certPaths))
 
 	return &VendorMetadata{
-		Date: time.Now().UTC().Format("2006-01-02T15:04:05Z07:00"),
-		Key:  currentSHA,
+		Key: latestSHA,
 		Bundles: map[string]BundleFingerprint{
 			AppleBundleName + ".p7b": *p7Fingerprints,
 			AppleBundleName + ".pem": *pemFingerprints,
 		},
+		Date:     lastModified.Format("2006-01-02T15:04:05Z07:00"),
 		NumCerts: len(certPaths),
 	}, nil
 }
 
-func getAppleCertThumbprints() ([]string, error) {
-	thumbprints := []string{}
-
-	resp, err := httpGet("https://support.apple.com/en-ca/HT213464")
+func getLatestAppleSHA() (string, time.Time, string, error) {
+	resp, err := httpGetString("https://api.github.com/repos/apple-oss-distributions/security_certificates/tags")
 	if err != nil {
-		return nil, err
+		return "", time.Now(), "", err
 	}
 
-	doc, err := html.Parse(resp)
+	type tagType struct {
+		Name       string `json:"name"`
+		TarballURL string `json:"tarball_url"`
+		Commit     struct {
+			SHA string `json:"sha"`
+		} `json:"commit"`
+	}
+	var tags []tagType
+	if err := json.Unmarshal([]byte(resp), &tags); err != nil {
+		return "", time.Now(), "", err
+	}
+
+	resp, err = httpGetString("https://api.github.com/repos/apple-oss-distributions/security_certificates/commits?sha=" + tags[0].Commit.SHA)
 	if err != nil {
-		return nil, err
+		return "", time.Now(), "", err
 	}
-	inTable := false
-	tdCount := 0
-	var f func(*html.Node)
-	f = func(n *html.Node) {
-		if n.Type == html.ElementNode && n.Data == "table" {
-			if inTable {
-				return
-			}
-			inTable = true
-		}
-		if inTable && n.Type == html.ElementNode && n.Data == "tr" {
-			tdCount = 0
-		}
-		if inTable && n.Type == html.ElementNode && n.Data == "td" {
-			tdCount++
-			if tdCount == 9 {
-				sha256 := strings.ReplaceAll(n.FirstChild.Data, " ", "")
-				sha256 = strings.ReplaceAll(sha256, "\u00a0", "")
 
-				if sha256 == "41A235AB60F0643E752A2DB4E914D68C0542167DE9CA28DF25FD79A693C29072" {
-					panic("apple: safety check failure")
-				}
-
-				thumbprints = append(thumbprints, strings.ToUpper(sha256))
-			}
-		}
-		for c := n.FirstChild; c != nil; c = c.NextSibling {
-			f(c)
-		}
+	ghResponse := []map[string]interface{}{}
+	if err := json.Unmarshal([]byte(resp), &ghResponse); err != nil {
+		return "", time.Now(), "", err
 	}
-	f(doc)
 
-	return thumbprints, nil
+	if len(ghResponse) < 1 {
+		return "", time.Now(), "", fmt.Errorf("no commit")
+	}
+
+	sha := ghResponse[0]["sha"].(string)
+	dateStr := ghResponse[0]["commit"].(map[string]interface{})["author"].(map[string]interface{})["date"].(string)
+	date, err := time.Parse("2006-01-02T15:04:05Z", dateStr)
+	if err != nil {
+		date = time.Now()
+	}
+
+	return sha, date, tags[0].TarballURL, nil
 }

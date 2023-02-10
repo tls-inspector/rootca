@@ -37,8 +37,7 @@ openssl dgst -sha256 -verify signing_key.pem -signature bundle_metadata.json.sig
 
 ### Apple
 
-To generate the Apple bundle, a precompiled list of certificates is downloaded from the [Apple Support website](https://support.apple.com/en-ca/HT213464)
-. The certificates are downloaded directly from crt.sh.
+To generate the Apple bundle, certificates are downloaded directly from [Apple's OSS GitHub Repo](https://github.com/apple-oss-distributions/security_certificates).
 
 ### Google
 

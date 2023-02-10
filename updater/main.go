@@ -161,7 +161,7 @@ func validateWorkdir() {
 		log.Fatalf("Workdir is not a directory %s", workdir)
 	}
 	if os.IsNotExist(err) {
-		if err := os.Mkdir(workdir, 7644); err != nil {
+		if err := os.Mkdir(workdir, os.ModePerm); err != nil {
 			log.Fatalf("Error creating workdir '%s': %s", workdir, err.Error())
 		}
 	}
