@@ -19,7 +19,9 @@ jobs:
     steps:
       - name: Generate Tag Name
         id: tag_name
-        run: echo "TAG_NAME=$(date +'bundle_%Y%m%d%H%M%S')" >> $GITHUB_ENV
+        run: |
+          echo "TAG_NAME=$(date +'bundle_%Y%m%d')" >> $GITHUB_ENV
+          echo "RELEASE_NAME=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
       - name: Checkout Source
         id: checkout
         uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # pin@v3.3.0
@@ -43,7 +45,7 @@ jobs:
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # pin@v1
         if: steps.commit.outputs.changes_detected == 'true'
         with:
-          name: CA Bundle ${{ github.event.repository.updated_at}}
+          name: ${{ env.TAG_NAME}} - CA Bundles
           target_commitish: ${{ steps.commit.commit_hash }}
           tag_name: "${{ env.TAG_NAME}}"
           body: Automatic CA bundle update
