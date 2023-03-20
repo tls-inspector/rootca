@@ -59,14 +59,42 @@ To generate the Mozilla bundle, a prepared list of certificates extracted from F
 The TLS Inspector bundle is a collection of certificate that are trusted equally by all other vendors. For example, a
 certificate that Microsoft trusts that Google does not is not included in this bundle.
 
+## API Usage
+
+You can use the GitHub API to progmatically query for and download these bundles
+
+1. Query for the latest tag
+
+    ```
+    HTTP GET https://api.github.com/repos/tls-inspector/rootca/tags
+    ```
+
+    The first object in the response is always the latest tag. Store the `name` value for that tag.
+
+2. Download assets
+
+    ```
+    HTTP GET https://raw.githubusercontent.com/tls-inspector/rootca/$tag_name/bundles/$asset_file_name
+    ```
+
+    Populate `$tag_name` with the name of the tag from above and `$asset_file_name` with the name of the bundle asset
+    to download. Don't include the path.
+
+    The above URL may return a redirect, so ensure your HTTP client is set to follow them.
+
+    **Always download the accompiying signature file for any downloaded assets and verify them against the public key in the repo!**
+
 ## License
 
-The software that compose this repository, excluding the certificate stores and certificate data, are released under the
+The software that compose this repository, **excluding** the certificate stores and certificate data, are released under the
 terms of the Mozilla Public License 2.0.
 
 *Apple*, *Google*, *Chromium*, *Chrome*, *Microsoft*, *Windows*, *Mozilla*, and *Firefox* are all registered trademarks
 belonging to their respective owners. This package is not affiliated with or endorsed by any third party, including but
 not limited to the afformentioned entities.
+
+Root certificates, such as those included in this software, are typically considered public data and are not encumbered
+by licenses. However, this authors of this software are not liable for any violations you may make by using this software.
 
 The export/import and/or use of strong cryptography software, providing cryptography hooks, or even just communicating
 technical details about cryptography software is illegal in some parts of the world. You are responsible for knowing and
