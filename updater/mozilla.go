@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"log"
 	"os"
@@ -30,6 +31,12 @@ func buildMozillaBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 	pemData, err := httpGetBytes("https://curl.se/ca/cacert.pem")
 	if err != nil {
 		return nil, err
+	}
+
+	pemDataHash := fmt.Sprintf("%x", sha256.Sum256(pemData))
+	if pemDataHash != latestSHA {
+		log.Printf("Checksum verification failed for mozilla CA bundle. CalculatedSHA='%s' ExpectedSHA='%s'", pemDataHash, latestSHA)
+		return nil, fmt.Errorf("verification failed")
 	}
 
 	pemCerts := extractPemCerts(pemData)

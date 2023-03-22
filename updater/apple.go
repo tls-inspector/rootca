@@ -84,43 +84,54 @@ func buildAppleBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 }
 
 func getLatestAppleSHA() (string, time.Time, string, error) {
-	resp, err := httpGetString("https://api.github.com/repos/apple-oss-distributions/security_certificates/tags")
-	if err != nil {
-		return "", time.Now(), "", err
-	}
-
-	type tagType struct {
+	type githubTagType struct {
 		Name       string `json:"name"`
 		TarballURL string `json:"tarball_url"`
 		Commit     struct {
 			SHA string `json:"sha"`
 		} `json:"commit"`
 	}
-	var tags []tagType
-	if err := json.Unmarshal([]byte(resp), &tags); err != nil {
-		return "", time.Now(), "", err
+
+	type githubCommitType struct {
+		SHA    string `json:"sha"`
+		Commit struct {
+			Author struct {
+				Email string `json:"email"`
+				Date  string `json:"date"`
+			} `json:"author"`
+		} `json:"commit"`
 	}
 
-	resp, err = httpGetString("https://api.github.com/repos/apple-oss-distributions/security_certificates/commits?sha=" + tags[0].Commit.SHA)
+	tagsResp, err := httpGet("https://api.github.com/repos/apple-oss-distributions/security_certificates/tags")
 	if err != nil {
 		return "", time.Now(), "", err
 	}
+	defer tagsResp.Close()
 
-	ghResponse := []map[string]interface{}{}
-	if err := json.Unmarshal([]byte(resp), &ghResponse); err != nil {
+	var tags []githubTagType
+	if err := json.NewDecoder(tagsResp).Decode(&tags); err != nil {
 		return "", time.Now(), "", err
 	}
 
-	if len(ghResponse) < 1 {
-		return "", time.Now(), "", fmt.Errorf("no commit")
+	commitResp, err := httpGet("https://api.github.com/repos/apple-oss-distributions/security_certificates/commits/" + tags[0].Commit.SHA)
+	if err != nil {
+		return "", time.Now(), "", err
+	}
+	defer commitResp.Close()
+
+	commit := githubCommitType{}
+	if err := json.NewDecoder(commitResp).Decode(&commit); err != nil {
+		return "", time.Now(), "", err
 	}
 
-	sha := ghResponse[0]["sha"].(string)
-	dateStr := ghResponse[0]["commit"].(map[string]interface{})["author"].(map[string]interface{})["date"].(string)
-	date, err := time.Parse("2006-01-02T15:04:05Z", dateStr)
+	if commit.Commit.Author.Email != "91980991+AppleOSSDistributions@users.noreply.github.com" {
+		return "", time.Now(), "", fmt.Errorf("safety cut-out: unrecognized commit author: %s", commit.Commit.Author.Email)
+	}
+
+	date, err := time.Parse("2006-01-02T15:04:05Z", commit.Commit.Author.Date)
 	if err != nil {
 		date = time.Now()
 	}
 
-	return sha, date, tags[0].TarballURL, nil
+	return commit.SHA, date, tags[0].TarballURL, nil
 }
