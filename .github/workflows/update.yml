@@ -24,7 +24,7 @@ jobs:
           echo "RELEASE_NAME=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
       - name: Checkout Source
         id: checkout
-        uses: actions/checkout@24cb9080177205b6e8c946b17badbe402adc938f # pin@v3.4.0
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # pin@v3.5.2
       - name: Update CA Bundles
         id: update_bundles
         uses: docker://ghcr.io/tls-inspector/rootca:latest
