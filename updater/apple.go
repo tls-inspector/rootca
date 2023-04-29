@@ -21,10 +21,10 @@ func buildAppleBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 
 	if metadata != nil && !forceUpdate {
 		if isBundleUpToDate(latestSHA, metadata.Key, AppleBundleName) {
-			log.Printf("Apple bundle is up-to-date")
+			logNotice("Apple bundle is up-to-date")
 			return metadata, nil
 		}
-		log.Printf("Detected changes to Apple bundle. LastSHA='%s' LatestSHA='%s'", metadata.Key, latestSHA)
+		logWarning("Detected changes to Apple bundle. LastSHA='%s' LatestSHA='%s'", metadata.Key, latestSHA)
 	}
 	log.Printf("Building Apple CA bundle")
 
@@ -70,7 +70,7 @@ func buildAppleBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 		return nil, err
 	}
 
-	log.Printf("Apple CA bundle generated with %d certificates", len(certPaths))
+	logNotice("Apple CA bundle generated with %d certificates", len(certPaths))
 
 	return &VendorMetadata{
 		Key: latestSHA,

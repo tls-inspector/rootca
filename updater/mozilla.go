@@ -21,10 +21,10 @@ func buildMozillaBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 
 	if metadata != nil && !forceUpdate {
 		if isBundleUpToDate(latestSHA, metadata.Key, MozillaBundleName) {
-			log.Printf("Mozilla bundle is up-to-date")
+			logNotice("Mozilla bundle is up-to-date")
 			return metadata, nil
 		}
-		log.Printf("Detected changes to Mozilla bundle. LastSHA='%s' LatestSHA='%s'", metadata.Key, latestSHA)
+		logWarning("Detected changes to Mozilla bundle. LastSHA='%s' LatestSHA='%s'", metadata.Key, latestSHA)
 	}
 	log.Printf("Building Mozilla CA bundle")
 
@@ -73,7 +73,7 @@ func buildMozillaBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 		return nil, err
 	}
 
-	log.Printf("Mozilla CA bundle generated with %d certificates", len(certPaths))
+	logNotice("Mozilla CA bundle generated with %d certificates", len(certPaths))
 
 	return &VendorMetadata{
 		Key: latestSHA,

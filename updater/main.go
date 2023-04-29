@@ -26,7 +26,7 @@ func main() {
 
 	metadata, err := readMetadata()
 	if err != nil {
-		log.Fatalf("Error reading bundle metadata file: %s", err.Error())
+		logFatal("Error reading bundle metadata file: %s", err.Error())
 	}
 
 	var mozillaMetadata *VendorMetadata
@@ -46,11 +46,11 @@ func main() {
 
 		newMozillaMetadata, err := buildMozillaBundle(mozillaMetadata)
 		if err != nil {
-			log.Fatalf("Error updating mozilla bundle: %s", err.Error())
+			logFatal("Error updating mozilla bundle: %s", err.Error())
 		}
 
 		if err := signBundle(MozillaBundleName); err != nil {
-			log.Fatalf("Error signing mozilla bundle: %s", err.Error())
+			logFatal("Error signing mozilla bundle: %s", err.Error())
 		}
 
 		mozillaMetadata = newMozillaMetadata
@@ -64,11 +64,11 @@ func main() {
 
 		newMicrosoftMetadata, err := buildMicrosoftBundle(microsoftMetadata)
 		if err != nil {
-			log.Fatalf("Error updating microsoft bundle: %s", err.Error())
+			logFatal("Error updating microsoft bundle: %s", err.Error())
 		}
 
 		if err := signBundle(MicrosoftBundleName); err != nil {
-			log.Fatalf("Error signing microsoft bundle: %s", err.Error())
+			logFatal("Error signing microsoft bundle: %s", err.Error())
 		}
 
 		microsoftMetadata = newMicrosoftMetadata
@@ -82,11 +82,11 @@ func main() {
 
 		newGoogleMetadata, err := buildGoogleBundle(googleMetadata)
 		if err != nil {
-			log.Fatalf("Error updating google bundle: %s", err.Error())
+			logFatal("Error updating google bundle: %s", err.Error())
 		}
 
 		if err := signBundle(GoogleBundleName); err != nil {
-			log.Fatalf("Error signing google bundle: %s", err.Error())
+			logFatal("Error signing google bundle: %s", err.Error())
 		}
 
 		googleMetadata = newGoogleMetadata
@@ -100,11 +100,11 @@ func main() {
 
 		newAppleMetadata, err := buildAppleBundle(appleMetadata)
 		if err != nil {
-			log.Fatalf("Error updating apple bundle: %s", err.Error())
+			logFatal("Error updating apple bundle: %s", err.Error())
 		}
 
 		if err := signBundle(AppleBundleName); err != nil {
-			log.Fatalf("Error signing apple bundle: %s", err.Error())
+			logFatal("Error signing apple bundle: %s", err.Error())
 		}
 
 		appleMetadata = newAppleMetadata
@@ -118,10 +118,10 @@ func main() {
 	}
 	newTLSInspectorMetadata, err := buildTLSInspectorBundle(tlsinspectorMetadata)
 	if err != nil {
-		log.Fatalf("Error updating tlsinspector bundle: %s", err.Error())
+		logFatal("Error updating tlsinspector bundle: %s", err.Error())
 	}
 	if err := signBundle(TLSInspectorBundleName); err != nil {
-		log.Fatalf("Error signing tlsinspector bundle: %s", err.Error())
+		logFatal("Error signing tlsinspector bundle: %s", err.Error())
 	}
 	tlsinspectorMetadata = newTLSInspectorMetadata
 
@@ -134,15 +134,15 @@ func main() {
 	}
 
 	if err := writeMetadata(newMetadata); err != nil {
-		log.Fatalf("Error writing metadata file: %s", err.Error())
+		logFatal("Error writing metadata file: %s", err.Error())
 	}
 
 	if err := signFile(BundleMetadataName); err != nil {
-		log.Fatalf("Error signing bundle metadata: %s", err.Error())
+		logFatal("Error signing bundle metadata: %s", err.Error())
 	}
 
 	if err := ExportReport(); err != nil {
-		log.Fatalf("Error exporting certificate report: %s", err.Error())
+		logFatal("Error exporting certificate report: %s", err.Error())
 	}
 
 	log.Printf("Finished in %s\n", time.Since(start).String())
@@ -155,18 +155,18 @@ func validateWorkdir() {
 
 	info, err := os.Stat(workdir)
 	if err != nil && !os.IsNotExist(err) {
-		log.Fatalf("Error validating workdir '%s': %s", workdir, err.Error())
+		logFatal("Error validating workdir '%s': %s", workdir, err.Error())
 	}
 	if info != nil && !info.IsDir() {
-		log.Fatalf("Workdir is not a directory %s", workdir)
+		logFatal("Workdir is not a directory %s", workdir)
 	}
 	if os.IsNotExist(err) {
 		if err := os.Mkdir(workdir, os.ModePerm); err != nil {
-			log.Fatalf("Error creating workdir '%s': %s", workdir, err.Error())
+			logFatal("Error creating workdir '%s': %s", workdir, err.Error())
 		}
 	}
 	if err := os.Chdir(workdir); err != nil {
-		log.Fatalf("Error moving into workdir '%s': %s", workdir, err.Error())
+		logFatal("Error moving into workdir '%s': %s", workdir, err.Error())
 	}
 
 	wd, err := os.Getwd()

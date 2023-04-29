@@ -106,10 +106,10 @@ func buildTLSInspectorBundle(metadata *VendorMetadata) (*VendorMetadata, error) 
 	currentSHA := checksumCertShaList(shas)
 	if metadata != nil && !forceUpdate {
 		if isBundleUpToDate(currentSHA, metadata.Key, TLSInspectorBundleName) {
-			log.Printf("TLSInspector bundle is up-to-date")
+			logNotice("TLSInspector bundle is up-to-date")
 			return metadata, nil
 		}
-		log.Printf("Detected changes to TLSInspector bundle. LastSHA='%s' LatestSHA='%s'", metadata.Key, currentSHA)
+		logWarning("Detected changes to TLSInspector bundle. LastSHA='%s' LatestSHA='%s'", metadata.Key, currentSHA)
 	}
 	log.Printf("Building TLSInspector CA bundle")
 
@@ -118,7 +118,7 @@ func buildTLSInspectorBundle(metadata *VendorMetadata) (*VendorMetadata, error) 
 		return nil, err
 	}
 
-	log.Printf("TLSInspector CA bundle generated with %d certificates", len(certPaths))
+	logNotice("TLSInspector CA bundle generated with %d certificates", len(certPaths))
 
 	return &VendorMetadata{
 		Date: time.Now().UTC().Format("2006-01-02T15:04:05Z07:00"),

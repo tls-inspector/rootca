@@ -30,10 +30,10 @@ func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 	}
 	if metadata != nil && !forceUpdate {
 		if isBundleUpToDate(currentSHA, metadata.Key, MicrosoftBundleName) {
-			log.Printf("Microsoft bundle is up-to-date")
+			logNotice("Microsoft bundle is up-to-date")
 			return metadata, nil
 		}
-		log.Printf("Detected changes to Microsoft bundle. LastSHA='%s' LatestSHA='%s'", metadata.Key, currentSHA)
+		logWarning("Detected changes to Microsoft bundle. LastSHA='%s' LatestSHA='%s'", metadata.Key, currentSHA)
 	}
 	log.Printf("Building Microsoft CA bundle")
 
@@ -128,7 +128,7 @@ func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 	}
 
 	saveMicrosoftBundleCache(&bundleCache)
-	log.Printf("Microsoft CA bundle generated with %d certificates", len(certPaths))
+	logNotice("Microsoft CA bundle generated with %d certificates", len(certPaths))
 
 	return &VendorMetadata{
 		Date: time.Now().UTC().Format("2006-01-02T15:04:05Z07:00"),

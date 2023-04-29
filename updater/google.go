@@ -19,10 +19,10 @@ func buildGoogleBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 
 	if metadata != nil && !forceUpdate {
 		if isBundleUpToDate(latestSHA, metadata.Key, GoogleBundleName) {
-			log.Printf("Google bundle is up-to-date")
+			logNotice("Google bundle is up-to-date")
 			return metadata, nil
 		}
-		log.Printf("Detected changes to Google bundle. LastSHA='%s' LatestSHA='%s'", metadata.Key, latestSHA)
+		logWarning("Detected changes to Google bundle. LastSHA='%s' LatestSHA='%s'", metadata.Key, latestSHA)
 	}
 	log.Printf("Building Google CA bundle")
 
@@ -56,7 +56,7 @@ func buildGoogleBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 		return nil, err
 	}
 
-	log.Printf("Google CA bundle generated with %d certificates", len(certPaths))
+	logNotice("Google CA bundle generated with %d certificates", len(certPaths))
 
 	return &VendorMetadata{
 		Key: latestSHA,
