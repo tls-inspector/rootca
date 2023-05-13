@@ -26,7 +26,7 @@ func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 	bundleCache := loadMicrosoftBundleCache()
 	subjects, currentSHA, err := getMicrosoftSubjects()
 	if err != nil {
-		return nil, fmt.Errorf("unable to get microsoft suvjects: %s", err.Error())
+		return nil, fmt.Errorf("unable to get microsoft subjects: %s", err.Error())
 	}
 	if metadata != nil && !forceUpdate {
 		if isBundleUpToDate(currentSHA, metadata.Key, MicrosoftBundleName) {

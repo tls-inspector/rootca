@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-var Version = "undefined"
+var Version = "dev"
 
 func main() {
 	parseArgs()
