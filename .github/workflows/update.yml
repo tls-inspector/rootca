@@ -31,6 +31,7 @@ jobs:
         env:
           ROOTCA_SIGNING_PRIVATE_KEY: ${{ secrets.ROOTCA_SIGNING_PRIVATE_KEY }}
           ROOTCA_SIGNING_PUBLIC_KEY: ${{ secrets.ROOTCA_SIGNING_PUBLIC_KEY }}
+          GITHUB_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Commit Changes
         id: commit
         uses: stefanzweifel/git-auto-commit-action@3ea6ae190baf489ba007f7c92608f33ce20ef04a # pin@v4

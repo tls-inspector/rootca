@@ -9,6 +9,7 @@ RUN apk add --no-cache openssl cabextract tar
 
 ENV ROOTCA_SIGNING_PRIVATE_KEY=""
 ENV ROOTCA_SIGNING_PUBLIC_KEY=""
+ENV GITHUB_ACCESS_TOKEN=""
 
 ADD rootca /
 RUN chmod +x /rootca

@@ -104,7 +104,7 @@ func getLatestAppleSHA() (string, time.Time, string, error) {
 
 	tagsResp, err := httpGet("https://api.github.com/repos/apple-oss-distributions/security_certificates/tags")
 	if err != nil {
-		return "", time.Now(), "", err
+		return "", time.Now(), "", fmt.Errorf("getting tags: %s", err)
 	}
 	defer tagsResp.Close()
 
@@ -115,7 +115,7 @@ func getLatestAppleSHA() (string, time.Time, string, error) {
 
 	commitResp, err := httpGet("https://api.github.com/repos/apple-oss-distributions/security_certificates/commits/" + tags[0].Commit.SHA)
 	if err != nil {
-		return "", time.Now(), "", err
+		return "", time.Now(), "", fmt.Errorf("getting commit: %s", err)
 	}
 	defer commitResp.Close()
 

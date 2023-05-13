@@ -17,7 +17,10 @@ import (
 	"os/exec"
 	"path"
 	"sort"
+	"strings"
 )
+
+var githubAccessToken = os.Getenv("GITHUB_ACCESS_TOKEN")
 
 func httpGetBytes(url string) ([]byte, error) {
 	r, err := httpGet(url)
@@ -46,6 +49,10 @@ func httpGet(url string) (io.ReadCloser, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
+	}
+
+	if strings.HasPrefix(url, "https://api.github.com/") && githubAccessToken != "" {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", githubAccessToken))
 	}
 
 	req.Header.Set("User-Agent", fmt.Sprintf("rootca/%s (github.com/tlsinspector/rootca)", Version))
