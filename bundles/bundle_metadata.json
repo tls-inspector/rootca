@@ -51,8 +51,8 @@
     "num_certs": 131
   },
   "apple": {
-    "date": "2022-12-09T02:24:39Z",
-    "key": "348349d0efbe00e2dc8413a5b311b9cc3ff29dbf",
+    "date": "2023-06-13T23:26:34Z",
+    "key": "398c8420e43640ae345b67280f29efe7cc36f12f",
     "bundles": {
       "apple_ca_bundle.p7b": {
         "sha1": "5757DEE197F497D1255D3D0DBBF1AA90BF290155",
