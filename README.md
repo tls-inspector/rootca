@@ -1,6 +1,6 @@
 # Root CA Certificate Stores
 
-This repository provides a PKCS#7 archive of Root CA Certificate Stores from Apple, Google, Microsoft, and Mozilla.
+This repository provides collections of Root CA Certificate Stores from Apple, Google, Microsoft, and Mozilla.
 The latest release of this repo always contains the most recent store, and is updated automatically whenever any changes
 are made.
 
@@ -47,7 +47,7 @@ The Google bundle is based on the [Chromium source code](https://github.com/chro
 ### Microsoft
 
 The Microsoft bundle is based on [Microsoft Trusted Root program](https://learn.microsoft.com/en-us/security/trusted-root/participants-list)
-, utilizing [Windows Subject Trust Lists](https://github.com/tls-inspector/rootca) downloaded directly from Windows
+, utilizing [Windows Subject Trust Lists](https://github.com/tls-inspector/authrootstl) downloaded directly from Windows
 Update. Only certificates that are trusted, valid for Server Authentication, and not expired are included.
 
 ### Mozilla

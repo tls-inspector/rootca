@@ -74,30 +74,33 @@ func buildTLSInspectorBundle(metadata *VendorMetadata) (*VendorMetadata, error) 
 		return nil, err
 	}
 
+	certKeyToShaMap := map[string]string{}
 	certBundlePresenceMap := map[string]int{}
 	for _, cert := range appleCerts {
-		sha := fmt.Sprintf("%X", sha256.Sum256(cert.Raw))
-		certBundlePresenceMap[sha] |= t_apple
+		keyId := fmt.Sprintf("%X", cert.SubjectKeyId)
+		certKeyToShaMap[keyId] = fmt.Sprintf("%X", sha256.Sum256(cert.Raw))
+		certBundlePresenceMap[keyId] |= t_apple
 	}
 	for _, cert := range googleCerts {
-		sha := fmt.Sprintf("%X", sha256.Sum256(cert.Raw))
-		certBundlePresenceMap[sha] |= t_google
+		keyId := fmt.Sprintf("%X", cert.SubjectKeyId)
+		certBundlePresenceMap[keyId] |= t_google
 	}
 	for _, cert := range microsoftCerts {
-		sha := fmt.Sprintf("%X", sha256.Sum256(cert.Raw))
-		certBundlePresenceMap[sha] |= t_microsoft
+		keyId := fmt.Sprintf("%X", cert.SubjectKeyId)
+		certBundlePresenceMap[keyId] |= t_microsoft
 	}
 	for _, cert := range mozillaCerts {
-		sha := fmt.Sprintf("%X", sha256.Sum256(cert.Raw))
-		certBundlePresenceMap[sha] |= t_mozilla
+		keyId := fmt.Sprintf("%X", cert.SubjectKeyId)
+		certBundlePresenceMap[keyId] |= t_mozilla
 	}
 
 	certPaths := []string{}
 	shas := []string{}
-	for sha, presence := range certBundlePresenceMap {
+	for keyId, presence := range certBundlePresenceMap {
 		if presence != 15 {
 			continue
 		}
+		sha := certKeyToShaMap[keyId]
 
 		shas = append(shas, sha)
 		certPaths = append(certPaths, path.Join(appleDir, sha+".crt"))
