@@ -20,6 +20,10 @@ func buildAppleBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 	}
 
 	if metadata != nil && !forceUpdate {
+		if lastModified.Before(metadata.MustDate()) {
+			logWarning("Apple bundle has modified date '%s' newer than the most recent vendors date '%s'. Skipping update.", metadata.MustDate(), lastModified)
+			return metadata, nil
+		}
 		if isBundleUpToDate(latestSHA, metadata.Key, AppleBundleName) {
 			logNotice("Apple bundle is up-to-date")
 			return metadata, nil
@@ -102,6 +106,7 @@ func getLatestAppleSHA() (string, time.Time, string, error) {
 		} `json:"commit"`
 	}
 
+	// Get the most recent tag
 	tagsResp, err := httpGet("https://api.github.com/repos/apple-oss-distributions/security_certificates/tags")
 	if err != nil {
 		return "", time.Now(), "", fmt.Errorf("getting tags: %s", err)
@@ -113,25 +118,33 @@ func getLatestAppleSHA() (string, time.Time, string, error) {
 		return "", time.Now(), "", err
 	}
 
-	commitResp, err := httpGet("https://api.github.com/repos/apple-oss-distributions/security_certificates/commits/" + tags[0].Commit.SHA)
+	// For that tag, get the last commit that touched anything in certificates/roots folder
+	// (we don't care about the other contents in this repo)
+	commitResp, err := httpGet("https://api.github.com/repos/apple-oss-distributions/security_certificates/commits?path=certificates/roots&sha=" + tags[0].Commit.SHA)
 	if err != nil {
 		return "", time.Now(), "", fmt.Errorf("getting commit: %s", err)
 	}
 	defer commitResp.Close()
 
-	commit := githubCommitType{}
-	if err := json.NewDecoder(commitResp).Decode(&commit); err != nil {
+	commits := []githubCommitType{}
+	if err := json.NewDecoder(commitResp).Decode(&commits); err != nil {
 		return "", time.Now(), "", err
 	}
 
-	if commit.Commit.Author.Email != "91980991+AppleOSSDistributions@users.noreply.github.com" {
-		return "", time.Now(), "", fmt.Errorf("safety cut-out: unrecognized commit author: %s", commit.Commit.Author.Email)
+	if len(commits) == 0 {
+		return "", time.Now(), "", fmt.Errorf("no commits found modifying certificates")
 	}
 
-	date, err := time.Parse("2006-01-02T15:04:05Z", commit.Commit.Author.Date)
+	lastCommit := commits[0]
+
+	if lastCommit.Commit.Author.Email != "91980991+AppleOSSDistributions@users.noreply.github.com" {
+		return "", time.Now(), "", fmt.Errorf("safety cut-out: unrecognized commit author: %s", lastCommit.Commit.Author.Email)
+	}
+
+	date, err := time.Parse("2006-01-02T15:04:05Z", lastCommit.Commit.Author.Date)
 	if err != nil {
 		date = time.Now()
 	}
 
-	return commit.SHA, date, tags[0].TarballURL, nil
+	return lastCommit.SHA, date, tags[0].TarballURL, nil
 }

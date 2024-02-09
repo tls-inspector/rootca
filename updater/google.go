@@ -18,6 +18,10 @@ func buildGoogleBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 	}
 
 	if metadata != nil && !forceUpdate {
+		if lastModified.Before(metadata.MustDate()) {
+			logWarning("Google bundle has modified date '%s' newer than the most recent vendors date '%s'. Skipping update.", metadata.MustDate(), lastModified)
+			return metadata, nil
+		}
 		if isBundleUpToDate(latestSHA, metadata.Key, GoogleBundleName) {
 			logNotice("Google bundle is up-to-date")
 			return metadata, nil

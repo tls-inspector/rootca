@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"os"
+	"time"
 )
 
 const BundleMetadataName = "bundle_metadata.json"
@@ -20,6 +21,14 @@ type VendorMetadata struct {
 	Key      string                       `json:"key"`
 	Bundles  map[string]BundleFingerprint `json:"bundles"`
 	NumCerts int                          `json:"num_certs"`
+}
+
+func (m VendorMetadata) MustDate() time.Time {
+	d, err := time.Parse("2006-01-02T15:04:05Z07:00", m.Date)
+	if err != nil {
+		panic(err)
+	}
+	return d
 }
 
 type BundleFingerprint struct {
