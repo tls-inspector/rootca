@@ -34,7 +34,7 @@ jobs:
           GITHUB_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Commit Changes
         id: commit
-        uses: stefanzweifel/git-auto-commit-action@8756aa072ef5b4a080af5dc8fef36c5d586e521d # pin@v5.0.0
+        uses: stefanzweifel/git-auto-commit-action@8756aa072ef5b4a080af5dc8fef36c5d586e521d #pin v5.0.0
         with:
           commit_user_name: Ian Spence
           commit_user_email: ian@ecnepsnai.com
@@ -43,7 +43,7 @@ jobs:
           tagging_message: "${{ env.TAG_NAME}}"
       - name: Make Release If Needed
         id: release
-        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # pin@v0.1.15
+        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 #pin v0.1.15
         if: steps.commit.outputs.changes_detected == 'true'
         with:
           name: ${{ env.TAG_NAME}} - CA Bundles
