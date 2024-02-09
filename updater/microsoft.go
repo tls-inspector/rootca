@@ -55,7 +55,14 @@ func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 		if subject.DisabledDate != nil {
 			continue
 		}
-		if subject.MicrosoftExtendedKeyUsage&authrootstl.KeyUsageServerAuthentication == 0 {
+		validEku := false
+		for _, eku := range subject.MicrosoftExtendedKeyUsage {
+			if eku.Equal(authrootstl.MicrosoftEKUServerAuthentication) {
+				validEku = true
+				break
+			}
+		}
+		if !validEku {
 			continue
 		}
 		if sliceContains(bundleCache.ExcludeCertificates, subject.SHA256Fingerprint) {

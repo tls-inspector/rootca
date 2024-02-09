@@ -318,7 +318,7 @@ func isBundleUpToDate(inKey, expectedKey string, bundleName string) bool {
 	return true
 }
 
-func sliceContains[T string](haystack []T, needle T) bool {
+func sliceContains[T comparable](haystack []T, needle T) bool {
 	for _, c := range haystack {
 		if c == needle {
 			return true
