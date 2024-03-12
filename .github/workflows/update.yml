@@ -38,12 +38,16 @@ jobs:
           HAS_CHANGES=$(if [[ $(git status --porcelain) == '' ]]; then echo 'false'; else echo 'true'; fi)
 
           if [[ $HAS_CHANGES == 'false' ]]; then
+            echo "::notice ::No changes detected"
             echo "needs_release=false" >> $GITHUB_OUTPUT
             exit 0
           fi
 
+          echo "::notice ::Bundle changes detected"
           git status
-          git commit -a --author "Ian Spence <ian@ecnepsnai.com>" -m "[Actions] Update CA Bundles"
+          git config user.email "ian@ecnepsnai.com"
+          git config user.name "Ian Spence"
+          git commit -a -m "[Actions] Update CA Bundles"
           git tag "${{ env.TAG_NAME}}"
           git push --all
           echo "needs_release=true" >> $GITHUB_OUTPUT
