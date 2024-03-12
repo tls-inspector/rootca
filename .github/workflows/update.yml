@@ -7,6 +7,7 @@ on:
     branches: ["main"]
   schedule:
     - cron: "18 18 * * *"
+  workflow_dispatch:
 
 permissions:
   packages: read
@@ -21,7 +22,6 @@ jobs:
         id: tag_name
         run: |
           echo "TAG_NAME=$(date +'bundle_%Y%m%d')" >> $GITHUB_ENV
-          echo "RELEASE_NAME=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
       - name: Checkout Source
         id: checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 #pin v4.1.1
@@ -34,44 +34,21 @@ jobs:
           GITHUB_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Commit Changes
         id: commit
-        uses: stefanzweifel/git-auto-commit-action@8756aa072ef5b4a080af5dc8fef36c5d586e521d #pin v5.0.0
-        with:
-          commit_user_name: Ian Spence
-          commit_user_email: ian@ecnepsnai.com
-          commit_author: Ian Spence <ian@ecnepsnai.com>
-          commit_message: "[Actions] Update CA Bundles"
-          tagging_message: "${{ env.TAG_NAME}}"
+        run: |
+          HAS_CHANGES=$(if [[ $(git status --porcelain) == '' ]]; then echo 'false'; else echo 'true'; fi)
+
+          if [[ $HAS_CHANGES == 'false' ]]; then
+            echo "needs_release=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          git status
+          git commit -a --author "Ian Spence <ian@ecnepsnai.com>" -m "[Actions] Update CA Bundles"
+          git tag "${{ env.TAG_NAME}}"
+          git push --all
+          echo "needs_release=true" >> $GITHUB_OUTPUT
       - name: Make Release If Needed
         id: release
-        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 #pin v0.1.15
-        if: steps.commit.outputs.changes_detected == 'true'
-        with:
-          name: ${{ env.TAG_NAME}} - CA Bundles
-          target_commitish: ${{ steps.commit.commit_hash }}
-          tag_name: "${{ env.TAG_NAME}}"
-          body: Automatic CA bundle update
-          files: |
-            bundles/bundle_metadata.json
-            bundles/bundle_metadata.json.sig
-            bundles/apple_ca_bundle.p7b
-            bundles/apple_ca_bundle.p7b.sig
-            bundles/apple_ca_bundle.pem
-            bundles/apple_ca_bundle.pem.sig
-            bundles/google_ca_bundle.p7b
-            bundles/google_ca_bundle.p7b.sig
-            bundles/google_ca_bundle.pem
-            bundles/google_ca_bundle.pem.sig
-            bundles/microsoft_ca_bundle.p7b
-            bundles/microsoft_ca_bundle.p7b.sig
-            bundles/microsoft_ca_bundle.pem
-            bundles/microsoft_ca_bundle.pem.sig
-            bundles/mozilla_ca_bundle.p7b
-            bundles/mozilla_ca_bundle.p7b.sig
-            bundles/mozilla_ca_bundle.pem
-            bundles/mozilla_ca_bundle.pem.sig
-            bundles/tlsinspector_ca_bundle.p7b
-            bundles/tlsinspector_ca_bundle.p7b.sig
-            bundles/tlsinspector_ca_bundle.pem
-            bundles/tlsinspector_ca_bundle.pem.sig
-            bundles/signing_key.pem
-            bundles/certificates.csv
+        if: steps.commit.outputs.needs_release == 'true'
+        run: |
+          gh release create -n "Automatic CA bundle update" -t "${{ env.TAG_NAME}} - CA Bundles" ${{ env.TAG_NAME}}bundles/bundle_metadata.json bundles/bundle_metadata.json.sig bundles/apple_ca_bundle.p7b bundles/apple_ca_bundle.p7b.sig bundles/apple_ca_bundle.pem bundles/apple_ca_bundle.pem.sig bundles/google_ca_bundle.p7b bundles/google_ca_bundle.p7b.sig bundles/google_ca_bundle.pem bundles/google_ca_bundle.pem.sig bundles/microsoft_ca_bundle.p7b bundles/microsoft_ca_bundle.p7b.sig bundles/microsoft_ca_bundle.pem bundles/microsoft_ca_bundle.pem.sig bundles/mozilla_ca_bundle.p7b bundles/mozilla_ca_bundle.p7b.sig bundles/mozilla_ca_bundle.pem bundles/mozilla_ca_bundle.pem.sig bundles/tlsinspector_ca_bundle.p7b bundles/tlsinspector_ca_bundle.p7b.sig bundles/tlsinspector_ca_bundle.pem bundles/tlsinspector_ca_bundle.pem.sig bundles/signing_key.pem bundles/certificates.csv
