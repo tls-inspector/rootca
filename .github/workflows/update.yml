@@ -24,7 +24,7 @@ jobs:
           echo "TAG_NAME=$(date +'bundle_%Y%m%d')" >> $GITHUB_ENV
       - name: Checkout Source
         id: checkout
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 #pin v4.1.1
+        uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633 #pin v4.1.2
       - name: Update CA Bundles
         id: update_bundles
         uses: docker://ghcr.io/tls-inspector/rootca:latest
