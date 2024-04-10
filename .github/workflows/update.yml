@@ -47,9 +47,10 @@ jobs:
           git status
           git config user.email "ian@ecnepsnai.com"
           git config user.name "Ian Spence"
-          git tag -a "${{ env.TAG_NAME}}" -m "${{ env.TAG_NAME}}"
           git commit -a -m "[Actions] Update CA Bundles"
-          git push --all
+          git tag -a "${{ env.TAG_NAME}}" -m "${{ env.TAG_NAME}}"
+          git push
+          git push --tags
           echo "needs_release=true" >> $GITHUB_OUTPUT
       - name: Make Release If Needed
         id: release
