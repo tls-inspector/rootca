@@ -30,7 +30,7 @@ jobs:
         uses: docker://ghcr.io/tls-inspector/rootca:latest
         env:
           ROOTCA_SIGNING_PRIVATE_KEY: ${{ secrets.ROOTCA_SIGNING_PRIVATE_KEY }}
-          ROOTCA_SIGNING_PUBLIC_KEY: ${{ ROOTCA_SIGNING_PUBLIC_KEY }}
+          ROOTCA_SIGNING_PUBLIC_KEY: $ROOTCA_SIGNING_PUBLIC_KEY
           GITHUB_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Commit Changes
         id: commit
