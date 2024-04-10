@@ -17,7 +17,7 @@
     "num_certs": 147
   },
   "microsoft": {
-    "date": "2024-04-10T01:30:21Z",
+    "date": "2024-04-10T01:33:11Z",
     "key": "67DC37ED50B8E63272B49A254A6039EE225974F1D767BB83EB1FD80E759A7C34",
     "bundles": {
       "microsoft_ca_bundle.p7b": {
@@ -68,7 +68,7 @@
     "num_certs": 149
   },
   "tls_inspector": {
-    "date": "2024-04-10T01:30:24Z",
+    "date": "2024-04-10T01:33:13Z",
     "key": "A2D67187F86637888956D372F049F51FA3AD024800E7C493436C9CFCCD88EA7B",
     "bundles": {
       "tlsinspector_ca_bundle.p7b": {
