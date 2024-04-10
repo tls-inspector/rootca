@@ -152,6 +152,7 @@ func writeTemp(data []byte) (string, error) {
 	if _, err := f.Write(data); err != nil {
 		return "", err
 	}
+	f.Sync()
 	f.Close()
 	return f.Name(), nil
 }

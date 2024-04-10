@@ -17,6 +17,10 @@ func main() {
 
 	log.Printf("rootca version %s\n", Version)
 
+	if len(publicKeyBytes) > 0 && len(privateKeyBytes) > 0 {
+		log.Printf("signing enabled, using public key:\n%s", publicKeyBytes)
+	}
+
 	validateWorkdir()
 
 	if _, err := os.Stat(".force_update"); err == nil {

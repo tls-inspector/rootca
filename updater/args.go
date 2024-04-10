@@ -1,11 +1,11 @@
 package main
 
 import (
+	"encoding/base64"
 	"fmt"
 	"log"
 	"os"
 	"os/exec"
-	"strings"
 )
 
 var forceUpdate = false
@@ -14,6 +14,11 @@ var cabextractPath = ""
 var workdir = "bundles"
 var publicKeyBytes []byte
 var privateKeyBytes []byte
+
+const (
+	envSigningPubKey  = "ROOTCA_SIGNING_PUBLIC_KEY"
+	envSigningPrivKey = "ROOTCA_SIGNING_PRIVATE_KEY"
+)
 
 func parseArgs() {
 	args := os.Args
@@ -74,9 +79,9 @@ Options:
  --force-update      Forcefully trigger an update of all bundles. By default bundles will only be updated if changes are detected.
 
 Environment Variables:
- ROOTCA_SIGNING_PUBLIC_KEY   Specify the public key PEM contents. Escape newlines with double backslashes.
- ROOTCA_SIGNING_PRIVATE_KEY  Specify the private key PEM contents. Escape newlines with double backslaces.
-`, os.Args[0])
+ %s   Specify the public key PEM contents. Escape newlines with double backslashes.
+ %s  Specify the private key PEM contents. Escape newlines with double backslaces.
+`, os.Args[0], envSigningPubKey, envSigningPrivKey)
 				os.Exit(0)
 			}
 		} else {
@@ -100,12 +105,24 @@ Environment Variables:
 		cabextractPath = cabextract
 	}
 
-	if len(publicKeyBytes) == 0 && os.Getenv("ROOTCA_SIGNING_PUBLIC_KEY") != "" {
-		keyStr := strings.ReplaceAll(os.Getenv("ROOTCA_SIGNING_PUBLIC_KEY"), "\\n", "\n")
+	if len(publicKeyBytes) == 0 && os.Getenv(envSigningPubKey) != "" {
+		keyBase64 := os.Getenv(envSigningPubKey)
+
+		if _, err := base64.StdEncoding.DecodeString(keyBase64); err != nil {
+			log.Fatalf("Invalid public key value in %s", envSigningPubKey)
+		}
+
+		keyStr := fmt.Sprintf("-----BEGIN PUBLIC KEY-----\n%s\n-----END PUBLIC KEY-----", keyBase64)
 		publicKeyBytes = []byte(keyStr)
 	}
-	if len(privateKeyBytes) == 0 && os.Getenv("ROOTCA_SIGNING_PRIVATE_KEY") != "" {
-		keyStr := strings.ReplaceAll(os.Getenv("ROOTCA_SIGNING_PRIVATE_KEY"), "\\n", "\n")
+	if len(privateKeyBytes) == 0 && os.Getenv(envSigningPrivKey) != "" {
+		keyBase64 := os.Getenv(envSigningPrivKey)
+
+		if _, err := base64.StdEncoding.DecodeString(keyBase64); err != nil {
+			log.Fatalf("Invalid public key value in %s", envSigningPrivKey)
+		}
+
+		keyStr := fmt.Sprintf("-----BEGIN EC PRIVATE KEY-----\n%s\n-----END EC PRIVATE KEY-----", keyBase64)
 		privateKeyBytes = []byte(keyStr)
 	}
 }
