@@ -59,3 +59,8 @@ jobs:
           gh release create -n "Automatic CA bundle update" -t "${{ env.TAG_NAME}} - CA Bundles" ${{ env.TAG_NAME}} bundles/bundle_metadata.json bundles/bundle_metadata.json.sig bundles/apple_ca_bundle.p7b bundles/apple_ca_bundle.p7b.sig bundles/apple_ca_bundle.pem bundles/apple_ca_bundle.pem.sig bundles/google_ca_bundle.p7b bundles/google_ca_bundle.p7b.sig bundles/google_ca_bundle.pem bundles/google_ca_bundle.pem.sig bundles/microsoft_ca_bundle.p7b bundles/microsoft_ca_bundle.p7b.sig bundles/microsoft_ca_bundle.pem bundles/microsoft_ca_bundle.pem.sig bundles/mozilla_ca_bundle.p7b bundles/mozilla_ca_bundle.p7b.sig bundles/mozilla_ca_bundle.pem bundles/mozilla_ca_bundle.pem.sig bundles/tlsinspector_ca_bundle.p7b bundles/tlsinspector_ca_bundle.p7b.sig bundles/tlsinspector_ca_bundle.pem bundles/tlsinspector_ca_bundle.pem.sig bundles/signing_key.pem bundles/certificates.csv
         env:
           GH_TOKEN: ${{ github.token }}
+      - name: Clear Cache
+        id: clear_cache
+        if: steps.commit.outputs.needs_release == 'true'
+        run: |
+          curl -X DELETE -u '${{ secrets.ROOTCA_API_USERNAME }}:${{ secrets.ROOTCA_API_PASSWORD }}' https://api.tlsinspector.com/rootca/latest
