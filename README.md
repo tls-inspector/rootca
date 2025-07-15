@@ -9,8 +9,8 @@ repository is entirely self-contained and can be self-hosted or modified.
 
 ## About
 
-This repository contains the following components: An update utility that builds the certificate bundles, a container
-and github workflow using that utility to check for and perform updates, and the actual certificate bundles and metadata.
+This repository contains the following components: An update utility that builds the certificate bundles, a container,
+and a GitHub workflow using that utility to check for and perform updates, and the actual certificate bundles and metadata.
 
 The certificate bundles are packaged as PKCS#7 archives with the certificates included in the Certificate/CRL section,
 and a text file with the PEM-encoded certificates.
@@ -24,7 +24,7 @@ For information on the update utility, see updater/README.md.
 
 ### Verification
 
-Bundles & Metadata are signed by a ECDSA-P256 key and have an accompanying signature file.
+Bundles & Metadata are signed by an ECDSA-P256 key and have an accompanying signature file.
 The sining public key is included in the repo and in each release.
 
 You can verify the signature of the files using OpenSSL (using `bundle_metadata.json` as an example):
@@ -63,7 +63,13 @@ certificate that Microsoft trusts that Google does not is not included in this b
 
 TLS Inspector provides an API to pragmatically query for and download certificate bundles.
 
-The base of the API is `https://api.tlsinspector.com`. All requests must have a user-agent header.
+The base of the API is `https://api.tlsinspector.com`.
+
+All requests must have a valid and somewhat identifiable user-agent header. We reject requests that
+use a default user agent header such as `curl/...` or `python-requests/...`.
+
+This API is provided "as-is" and with no guarantees of availability or up-time. We reserve the right
+to revoke your access to the API at our discretion.
 
 ### Get Latest Bundle Name
 
