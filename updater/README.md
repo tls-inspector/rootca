@@ -20,10 +20,7 @@ Options:
  --force-update      Forcefully trigger an update of all bundles. By default bundles will only be updated if changes are detected.
 
 Environment Variables:
- ROOTCA_SIGNING_PUBLIC_KEY   Specify the public key PEM contents. Remove the header and footer and any newlines.
- ROOTCA_SIGNING_PRIVATE_KEY  Specify the private key PEM contents. Remove the header and footer and any newlines.
+ ROOTCA_SIGNING_PUBLIC_KEY   Specify the public key PEM contents. Escape newlines with double backslashes.
+ ROOTCA_SIGNING_PRIVATE_KEY   Specify the private key PEM contents. Escape newlines with double backslaces.
+ GITHUB_ACCESS_TOKEN   Specify a Github access token used for read-only API requests.
 ```
-
-### Container
-
-The `ghcr.io/tls-inspector/rootca` container image is provided mostly for use within Github workflows. **You do not need to use the container**.

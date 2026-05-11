@@ -20,7 +20,7 @@ import (
 	"strings"
 )
 
-var githubAccessToken = os.Getenv("GITHUB_ACCESS_TOKEN")
+var githubAccessToken = os.Getenv(envGithubAccessToken)
 
 func httpGetBytes(url string) ([]byte, error) {
 	r, err := httpGet(url)
@@ -51,8 +51,12 @@ func httpGet(url string) (io.ReadCloser, error) {
 		return nil, err
 	}
 
-	if strings.HasPrefix(url, "https://api.github.com/") && githubAccessToken != "" {
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", githubAccessToken))
+	if strings.HasPrefix(url, "https://api.github.com/") {
+		if githubAccessToken != "" {
+			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", githubAccessToken))
+		} else {
+			log.Printf("Warning: no github access token specified, API requests may get rate-limited without it")
+		}
 	}
 
 	req.Header.Set("User-Agent", fmt.Sprintf("rootca/%s (github.com/tlsinspector/rootca)", Version))

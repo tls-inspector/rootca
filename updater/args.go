@@ -16,8 +16,9 @@ var publicKeyBytes []byte
 var privateKeyBytes []byte
 
 const (
-	envSigningPubKey  = "ROOTCA_SIGNING_PUBLIC_KEY"
-	envSigningPrivKey = "ROOTCA_SIGNING_PRIVATE_KEY"
+	envSigningPubKey     = "ROOTCA_SIGNING_PUBLIC_KEY"
+	envSigningPrivKey    = "ROOTCA_SIGNING_PRIVATE_KEY"
+	envGithubAccessToken = "GITHUB_ACCESS_TOKEN"
 )
 
 func parseArgs() {
@@ -80,14 +81,17 @@ Options:
 
 Environment Variables:
  %s   Specify the public key PEM contents. Escape newlines with double backslashes.
- %s  Specify the private key PEM contents. Escape newlines with double backslaces.
-`, os.Args[0], envSigningPubKey, envSigningPrivKey)
+ %s   Specify the private key PEM contents. Escape newlines with double backslaces.
+ %s   Specify a Github access token used for read-only API requests.
+`, os.Args[0], envSigningPubKey, envSigningPrivKey, envGithubAccessToken)
 				os.Exit(0)
+			default:
+				fmt.Fprintf(os.Stderr, "Unknown argument %s\n", arg)
+				os.Exit(1)
 			}
 		} else {
 			workdir = arg
 		}
-		i++
 	}
 
 	if opensslPath == "" {
