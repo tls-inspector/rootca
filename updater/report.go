@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -36,6 +37,9 @@ func ExportReport() error {
 			certPem, _ := pem.Decode(pemCert)
 			cert, err := x509.ParseCertificate(certPem.Bytes)
 			if err != nil {
+				if strings.Contains(err.Error(), "negative serial number") {
+					continue
+				}
 				return nil, err
 			}
 

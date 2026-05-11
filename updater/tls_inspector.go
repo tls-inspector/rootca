@@ -153,6 +153,7 @@ func scanDirectoryForCertificates(dirName string) ([]x509.Certificate, error) {
 		certPem, _ := pem.Decode(data)
 		cert, err := x509.ParseCertificate(certPem.Bytes)
 		if err != nil {
+			log.Printf("Warning: found invalid certificate at %s/%s: %s", dirName, file.Name(), err.Error())
 			return nil, err
 		}
 

@@ -203,7 +203,7 @@ func getCertPemSHA(certData []byte) (string, error) {
 	certPem, _ := pem.Decode(certData)
 	cert, err := x509.ParseCertificate(certPem.Bytes)
 	if err != nil {
-		return "", nil
+		return "", err
 	}
 
 	signer := sha256.New()
@@ -300,6 +300,13 @@ func extractP7B(bundlePath, outputDir string) error {
 	for _, pemCert := range pemCerts {
 		sha, err := getCertPemSHA(pemCert)
 		if err != nil {
+			// Known issue: For some reason there is but one root certificate that has a negative serial number.
+			// This is invalid, and go (rightfully) enforces this. However, Microsoft still trusts this otherwise
+			// invalid certificate. Even more baffling is that they have not been issuing certificates for the web for
+			// over 6 years.
+			if strings.Contains(err.Error(), "negative serial number") {
+				continue
+			}
 			return fmt.Errorf("error parsing certificate: %s", err.Error())
 		}
 		fileName := path.Join(outputDir, sha+".crt")
