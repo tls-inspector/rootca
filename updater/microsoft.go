@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"slices"
 	"strings"
 	"time"
 
@@ -21,6 +22,19 @@ type microsoftBundleCacheType struct {
 
 const MicrosoftBundleName = "microsoft_ca_bundle"
 const microsoftBundleCacheName = ".microsoft_cache.json"
+
+// Slice of SHA256 fingerprints of certificates in the Microsoft bundle to ignore
+var ignoredMicrosoftCertificates = []string{
+	/*
+		Certificate "EC-ACC"
+		Issuer: CN=EC-ACC,OU=[Serveis Publics de Certificacio Vegeu https://www.catcert.net/verarrel (c)03 Jerarquia Entitats de Certificacio Catalanes],O=[Agencia Catalana de Certificacio (NIF Q-0801176-I)],C=[ES]
+		Serial Number: -11d4c2142bde21eb579d53fb0c223bff
+		Subject: CN=EC-ACC,OU=[Serveis Publics de Certificacio Vegeu https://www.catcert.net/verarrel (c)03 Jerarquia Entitats de Certificacio Catalanes],O=[Agencia Catalana de Certificacio (NIF Q-0801176-I)],C=[ES]
+		Not Valid Before: 2003-01-07 23:00:00 +0000 UTC
+		Not Valid After : 2031-01-07 22:59:59 +0000 UTC
+	*/
+	"88497F01602F3154246AE28C4D5AEF10F1D87EBB76626F4AE0B7F95BA7968799", // Reason: negative serial numbers are prohibited and CA is not trusted elsewhere.
+}
 
 func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 	bundleCache := loadMicrosoftBundleCache()
@@ -52,6 +66,9 @@ func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 
 	certPaths := []string{}
 	for _, subject := range subjects {
+		if slices.Contains(ignoredMicrosoftCertificates, subject.SHA256Fingerprint) {
+			continue
+		}
 		if subject.DisabledDate != nil {
 			continue
 		}
@@ -65,7 +82,7 @@ func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 		if !validEku {
 			continue
 		}
-		if sliceContains(bundleCache.ExcludeCertificates, subject.SHA256Fingerprint) {
+		if slices.Contains(bundleCache.ExcludeCertificates, subject.SHA256Fingerprint) {
 			continue
 		}
 		thumbprintMap[subject.SHA256Fingerprint] = true
@@ -86,11 +103,11 @@ func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 		derCertPath := path.Join(tmpDir, subject.SHA1Fingerprint+".bin")
 
 		if err := downloadFile(fmt.Sprintf("http://ctldl.windowsupdate.com/msdownload/update/v3/static/trustedr/en/%s.crt", subject.SHA1Fingerprint), derCertPath); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("downloading certificate from windows update: %s", err)
 		}
 		isExpired, err := microsoftCertificateIsExpired(derCertPath)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("parsing certificate: %s", err)
 		}
 		if isExpired {
 			bundleCache.ExcludeCertificates = append(bundleCache.ExcludeCertificates, subject.SHA256Fingerprint)
@@ -101,7 +118,7 @@ func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 
 		dlThumbprint, err := convertDerToPem(derCertPath, certPath)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("converting certificate DER to PEM: %s", err)
 		}
 		if dlThumbprint != subject.SHA256Fingerprint {
 			return nil, fmt.Errorf("downloaded certificate verification failed")
@@ -114,7 +131,7 @@ func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 
 	certFiles, err := os.ReadDir(tmpDir)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("reading temp dir: %s", err)
 	}
 	for _, certFile := range certFiles {
 		sha := strings.ToUpper(certFile.Name())
@@ -131,7 +148,7 @@ func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 
 	p7Fingerprints, pemFingerprints, err := generateBundleFromCertificates(certPaths, MicrosoftBundleName)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("generating bundles: %s", err)
 	}
 
 	saveMicrosoftBundleCache(&bundleCache)
