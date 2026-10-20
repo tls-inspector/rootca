@@ -14,6 +14,8 @@ import (
 	"time"
 )
 
+const ReportFileName = "certificates.csv"
+
 func ExportReport() error {
 	type tReportCertificate struct {
 		Vendor        string
@@ -86,8 +88,8 @@ func ExportReport() error {
 		return fmt.Errorf("tlsinspector: %s", err.Error())
 	}
 
-	os.Remove("certificates.csv")
-	f, err := os.OpenFile("certificates.csv", os.O_CREATE|os.O_RDWR, 0644)
+	os.Remove(ReportFileName)
+	f, err := os.OpenFile(ReportFileName, os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
 		return err
 	}

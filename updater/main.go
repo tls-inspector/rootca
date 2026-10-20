@@ -149,6 +149,10 @@ func main() {
 		logFatal("Error exporting certificate report: %s", err.Error())
 	}
 
+	if err := signFile(ReportFileName); err != nil {
+		logFatal("Error signing bundle report: %s", err.Error())
+	}
+
 	log.Printf("Finished in %s\n", time.Since(start).String())
 }
 
