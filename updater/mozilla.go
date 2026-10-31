@@ -68,7 +68,7 @@ func buildMozillaBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 		date = time.Now().UTC()
 	}
 
-	p7Fingerprints, pemFingerprints, err := generateBundleFromCertificates(certPaths, MozillaBundleName)
+	p7Fingerprints, pemFingerprints, zipFingerprints, err := generateBundleFromCertificates(certPaths, MozillaBundleName)
 	if err != nil {
 		return nil, err
 	}
@@ -80,6 +80,7 @@ func buildMozillaBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 		Bundles: map[string]BundleFingerprint{
 			MozillaBundleName + ".p7b": *p7Fingerprints,
 			MozillaBundleName + ".pem": *pemFingerprints,
+			MozillaBundleName + ".zip": *zipFingerprints,
 		},
 		Date:     date.Format("2006-01-02T15:04:05Z07:00"),
 		NumCerts: len(pemCerts),

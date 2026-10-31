@@ -1,2 +1,4 @@
+github.com/blacktop/ipsw v0.1.0 h1:t3KWZt8IyZvM1fRsfsFieSzUWL+UEs7/fpzktYx5oqY=
+github.com/blacktop/ipsw v0.1.0/go.mod h1:ThOYXsO66ZdyTC+QuBBFsKg523r6g480nTey6vm9UI4=
 github.com/tls-inspector/authrootstl v1.0.3 h1:394e2gIk+98EJHur7MbCnU3jaKCpMZ+zCLT3oBgYSzU=
 github.com/tls-inspector/authrootstl v1.0.3/go.mod h1:xIdqfi7sv1/41bErWMDb4wo4+3l9q8ALknO93vKpvmE=

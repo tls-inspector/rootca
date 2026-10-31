@@ -2,8 +2,15 @@ The rootca update tool is a golang application that can be used to maintain a di
 
 ### Requirements
  - OpenSSL 3.x
- - cabextract
- - tar
+ - `cabextract`
+ - `tar`
+ - `aea` (⚠️ **macOS only!**)
+ - `aa` (⚠️ **macOS only!**)
+
+A macOS device is required to update the Apple bundle, as the bundle is provided in a Apple-proprietary encrypted format
+that required macOS-only tools to decrypt and extract.
+
+We're aware this is a significant limitation and are looking into fixing it, but we can not provide a timeline yet.
 
 ### Usage
 

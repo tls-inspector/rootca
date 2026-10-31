@@ -1,6 +1,7 @@
 package main
 
 import (
+	"archive/zip"
 	"bufio"
 	"bytes"
 	"crypto/sha1"
@@ -21,6 +22,7 @@ import (
 )
 
 var githubAccessToken = os.Getenv(envGithubAccessToken)
+var httpRequestUserAgent = fmt.Sprintf("rootca/%s (github.com/tlsinspector/rootca)", Version)
 
 func httpGetBytes(url string) ([]byte, error) {
 	r, err := httpGet(url)
@@ -59,7 +61,7 @@ func httpGet(url string) (io.ReadCloser, error) {
 		}
 	}
 
-	req.Header.Set("User-Agent", fmt.Sprintf("rootca/%s (github.com/tlsinspector/rootca)", Version))
+	req.Header.Set("User-Agent", httpRequestUserAgent)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -74,23 +76,46 @@ func httpGet(url string) (io.ReadCloser, error) {
 
 // generateBundleFromCertificates will generate a PKCS#7 and PEM bundle from the given slice of PEM certificate files
 // returns the fingerprints of the PKCS#7 file, the PEM file, or an error
-func generateBundleFromCertificates(pemPaths []string, bundleName string) (*BundleFingerprint, *BundleFingerprint, error) {
+func generateBundleFromCertificates(pemPaths []string, bundleName string) (*BundleFingerprint, *BundleFingerprint, *BundleFingerprint, error) {
+	p7bPath := bundleName + ".p7b"
+	pemPath := bundleName + ".pem"
+	zipPath := bundleName + ".zip"
+
+	os.Remove(zipPath)
+	zipFile, err := os.OpenFile(zipPath, os.O_CREATE|os.O_RDWR, 0644)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("zip: %s", err.Error())
+	}
+	zipWriter := zip.NewWriter(zipFile)
+
 	// Sort the certificates by their hash
 	certFingerprintsToPath := map[string]string{}
 	certFingerprints := make([]string, len(pemPaths))
 	for i, pemPath := range pemPaths {
 		pemData, err := os.ReadFile(pemPath)
 		if err != nil {
-			return nil, nil, fmt.Errorf("pem: %s", err.Error())
+			return nil, nil, nil, fmt.Errorf("pem: %s", err.Error())
 		}
 
 		fingerprint, err := getCertPemSHA(pemData)
 		if err != nil {
-			return nil, nil, fmt.Errorf("pem: %s", err.Error())
+			return nil, nil, nil, fmt.Errorf("pem: %s", err.Error())
 		}
 		certFingerprintsToPath[fingerprint] = pemPath
 		certFingerprints[i] = fingerprint
+
+		zw, err := zipWriter.Create(fingerprint + ".crt")
+		if err != nil {
+			return nil, nil, nil, fmt.Errorf("zip: %s", err.Error())
+		}
+		if _, err := zw.Write(pemData); err != nil {
+			return nil, nil, nil, fmt.Errorf("zip: %s", err.Error())
+		}
 	}
+	if err := zipWriter.Close(); err != nil {
+		return nil, nil, nil, fmt.Errorf("zip: %s", err.Error())
+	}
+	zipFile.Close()
 	sort.Slice(certFingerprints, func(i, j int) bool {
 		return certFingerprints[i] > certFingerprints[j]
 	})
@@ -104,7 +129,7 @@ func generateBundleFromCertificates(pemPaths []string, bundleName string) (*Bund
 	}
 
 	if len(pemPaths) == 0 {
-		return nil, nil, fmt.Errorf("no certificates to add to bundle")
+		return nil, nil, nil, fmt.Errorf("no certificates to add to bundle")
 	}
 
 	for _, certPath := range pemPaths {
@@ -113,39 +138,43 @@ func generateBundleFromCertificates(pemPaths []string, bundleName string) (*Bund
 	}
 
 	args = append(args, "-out")
-	args = append(args, bundleName+".p7b")
+	args = append(args, p7bPath)
 
-	os.Remove(bundleName + ".p7b")
+	os.Remove(p7bPath)
 	cmd := exec.Command(opensslPath, args...)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return nil, nil, fmt.Errorf("openssl error: %s", output)
+		return nil, nil, nil, fmt.Errorf("openssl error: %s", output)
 	}
 
-	os.Remove(bundleName + ".pem")
-	f, err := os.OpenFile(bundleName+".pem", os.O_CREATE|os.O_RDWR, 0644)
+	os.Remove(pemPath)
+	f, err := os.OpenFile(pemPath, os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
-		return nil, nil, fmt.Errorf("pem: %s", err.Error())
+		return nil, nil, nil, fmt.Errorf("pem: %s", err.Error())
 	}
 	defer f.Close()
 	for _, pemPath := range pemPaths {
 		pemData, err := os.ReadFile(pemPath)
 		if err != nil {
-			return nil, nil, fmt.Errorf("pem: %s", err.Error())
+			return nil, nil, nil, fmt.Errorf("pem: %s", err.Error())
 		}
 		f.Write(pemData)
 	}
 
-	p7Fingerprints, err := getFileFingerprints(bundleName + ".p7b")
+	p7Fingerprints, err := getFileFingerprints(p7bPath)
 	if err != nil {
-		return nil, nil, fmt.Errorf("checksum: %s", err.Error())
+		return nil, nil, nil, fmt.Errorf("checksum: %s", err.Error())
 	}
-	pemFingerprints, err := getFileFingerprints(bundleName + ".pem")
+	pemFingerprints, err := getFileFingerprints(pemPath)
 	if err != nil {
-		return nil, nil, fmt.Errorf("checksum: %s", err.Error())
+		return nil, nil, nil, fmt.Errorf("checksum: %s", err.Error())
+	}
+	zipFingerprints, err := getFileFingerprints(zipPath)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("checksum: %s", err.Error())
 	}
 
-	return p7Fingerprints, pemFingerprints, nil
+	return p7Fingerprints, pemFingerprints, zipFingerprints, nil
 }
 
 func writeTemp(data []byte) (string, error) {

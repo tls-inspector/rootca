@@ -55,7 +55,7 @@ func buildGoogleBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 		}
 	}
 
-	p7Fingerprints, pemFingerprints, err := generateBundleFromCertificates(certPaths, GoogleBundleName)
+	p7Fingerprints, pemFingerprints, zipFingerprints, err := generateBundleFromCertificates(certPaths, GoogleBundleName)
 	if err != nil {
 		return nil, err
 	}
@@ -67,6 +67,7 @@ func buildGoogleBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 		Bundles: map[string]BundleFingerprint{
 			GoogleBundleName + ".p7b": *p7Fingerprints,
 			GoogleBundleName + ".pem": *pemFingerprints,
+			GoogleBundleName + ".zip": *zipFingerprints,
 		},
 		Date:     lastModified.Format("2006-01-02T15:04:05Z07:00"),
 		NumCerts: len(pemCerts),

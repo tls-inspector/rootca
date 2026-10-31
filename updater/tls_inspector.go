@@ -116,7 +116,7 @@ func buildTLSInspectorBundle(metadata *VendorMetadata) (*VendorMetadata, error) 
 	}
 	log.Printf("Building TLSInspector CA bundle")
 
-	p7Fingerprints, pemFingerprints, err := generateBundleFromCertificates(certPaths, TLSInspectorBundleName)
+	p7Fingerprints, pemFingerprints, zipFingerprints, err := generateBundleFromCertificates(certPaths, TLSInspectorBundleName)
 	if err != nil {
 		return nil, err
 	}
@@ -129,6 +129,7 @@ func buildTLSInspectorBundle(metadata *VendorMetadata) (*VendorMetadata, error) 
 		Bundles: map[string]BundleFingerprint{
 			TLSInspectorBundleName + ".p7b": *p7Fingerprints,
 			TLSInspectorBundleName + ".pem": *pemFingerprints,
+			TLSInspectorBundleName + ".zip": *zipFingerprints,
 		},
 		NumCerts: len(certPaths),
 	}, nil

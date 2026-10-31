@@ -9,10 +9,13 @@ import (
 
 func signBundle(bundleName string) error {
 	if err := signFile(bundleName + ".p7b"); err != nil {
-		return nil
+		return fmt.Errorf("sign p7b: %s", err.Error())
 	}
 	if err := signFile(bundleName + ".pem"); err != nil {
-		return nil
+		return fmt.Errorf("sign pem: %s", err.Error())
+	}
+	if err := signFile(bundleName + ".zip"); err != nil {
+		return fmt.Errorf("sign zip: %s", err.Error())
 	}
 	return nil
 }

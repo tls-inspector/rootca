@@ -146,7 +146,7 @@ func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 		}
 	}
 
-	p7Fingerprints, pemFingerprints, err := generateBundleFromCertificates(certPaths, MicrosoftBundleName)
+	p7Fingerprints, pemFingerprints, zipFingerprints, err := generateBundleFromCertificates(certPaths, MicrosoftBundleName)
 	if err != nil {
 		return nil, fmt.Errorf("generating bundles: %s", err)
 	}
@@ -160,6 +160,7 @@ func buildMicrosoftBundle(metadata *VendorMetadata) (*VendorMetadata, error) {
 		Bundles: map[string]BundleFingerprint{
 			MicrosoftBundleName + ".p7b": *p7Fingerprints,
 			MicrosoftBundleName + ".pem": *pemFingerprints,
+			MicrosoftBundleName + ".zip": *zipFingerprints,
 		},
 		NumCerts: len(certPaths),
 	}, nil
